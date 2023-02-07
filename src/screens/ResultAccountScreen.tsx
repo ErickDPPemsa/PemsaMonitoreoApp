@@ -1,8 +1,8 @@
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Animated, ListRenderItemInfo, Modal, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, ListRenderItemInfo, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useReport } from '../hooks/useQuery';
 import { Loading } from '../components/Loading';
-import { Account, Events, percentaje, Orientation } from '../interfaces/interfaces';
+import { Account, Events, percentaje, Orientation, Percentajes } from '../interfaces/interfaces';
 import { useAppSelector } from '../app/hooks';
 import Color from 'color';
 import { stylesApp } from '../App';
@@ -53,6 +53,17 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
     useLayoutEffect(() => {
         navigation.setOptions({
             title: report === 'ap-ci' ? 'APERTURA Y CIERRE' : 'EVENTO DE ALARMA',
+            headerLeft: (() =>
+                <IconButton
+                    iconsize={30}
+                    style={{ paddingRight: 10 }}
+                    name={Platform.OS === 'ios' ? 'chevron-back-outline' : 'arrow-back-outline'}
+                    onPress={() => {
+                        queryClient.removeQueries({ queryKey: keyQuery })
+                        navigation.goBack();
+                    }}
+                />
+            ),
             headerRight: (() =>
                 <IconMenu
                     ref={refModal}
@@ -110,58 +121,78 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
                         <Text>Particón: {item.Particion}</Text>
                     </View>
                 </View>
-                <IconButton iconsize={30} name='information-circle-outline' />
+                <IconButton
+                    iconsize={30}
+                    name='information-circle-outline'
+                    onPress={() => navigation.navigate('Modal', { type: 'info', btnClose: false, icon: true, subtitle: item.FechaOriginal + ' ' + item.Hora, text: JSON.stringify(item, null, 3) })}
+                />
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
-                <Text variant='labelMedium'>{`${item.DescripcionZona} ${item.NombreUsuario}`.split('').length <= 1 ? 'Sistema / Llavero' : `${item.DescripcionZona} ${item.NombreUsuario}`}</Text>
+                <Text adjustsFontSizeToFit numberOfLines={1} style={{ flex: 1 }} variant='labelMedium'>{`${item.DescripcionZona} ${item.NombreUsuario}`.split('').length <= 1 ? 'Sistema / Llavero' : `${item.DescripcionZona} ${item.NombreUsuario}`}</Text>
                 <Text variant='labelMedium'># {item.CodigoUsuario} {item.CodigoZona}</Text>
             </View>
         </View>
     ), [colors, roundness, orientation]);
 
     const _renderPercentajes = useCallback(() => {
+        const Percentajes = (percentajes: Percentajes) => {
+            {
+                return (
+                    Object.entries(percentajes).map((el, idx) => {
+                        const { label, total, percentaje, text, events }: percentaje = el[1];
+                        const title: string = label ?? el[0];
+                        return (
+                            <TargetPercentaje
+                                key={JSON.stringify(el)}
+                                max={100}
+                                text={title}
+                                amount={`${events}/${total}`}
+                                percentage={percentaje}
+                                textLarge={text}
+                                icon={
+                                    (el[0] === 'Aperturas')
+                                        ? { name: 'lock-open-outline', backgroundColor: colors.success }
+                                        : (el[0] === 'Cierres')
+                                            ? { name: 'lock-closed-outline', backgroundColor: colors.danger }
+                                            : (el[0] === 'APCI')
+                                                ? { name: 'warning-outline', backgroundColor: colors.success }
+                                                : (el[0] === 'Alarma')
+                                                    ? { name: 'server-outline', backgroundColor: colors.danger }
+                                                    : (el[0] === 'Pruebas')
+                                                        ? { name: 'settings-outline', backgroundColor: colors.test }
+                                                        : (el[0] === 'Battery')
+                                                            ? { name: 'battery-dead-outline', backgroundColor: colors.warning }
+                                                            : { name: 'help-circle-outline', backgroundColor: colors.other }
+                                } />
+                        )
+                    })
+                )
+            }
+        }
+
         if (data && data.cuentas) {
             if (data.cuentas.length === 1) {
                 const { percentajes } = data;
                 if (percentajes)
                     return (
                         <View style={{ paddingVertical: 5 }}>
-                            <ScrollView horizontal={orientation === Orientation.portrait} alwaysBounceHorizontal={orientation === Orientation.portrait} showsHorizontalScrollIndicator={false} >
-                                {Object.entries(percentajes).map((el, idx) => {
-                                    const { label, total, percentaje, text, events }: percentaje = el[1];
-                                    const title: string = label ?? el[0];
-                                    return (
-                                        <TargetPercentaje
-                                            key={JSON.stringify(el)}
-                                            max={100}
-                                            text={title}
-                                            amount={`${events}/${total}`}
-                                            percentage={percentaje}
-                                            textLarge={text}
-                                            icon={
-                                                (el[0] === 'Aperturas')
-                                                    ? { name: 'lock-open-outline', backgroundColor: colors.success }
-                                                    : (el[0] === 'Cierres')
-                                                        ? { name: 'lock-closed-outline', backgroundColor: colors.danger }
-                                                        : (el[0] === 'APCI')
-                                                            ? { name: 'warning-outline', backgroundColor: colors.success }
-                                                            : (el[0] === 'Alarma')
-                                                                ? { name: 'server-outline', backgroundColor: colors.danger }
-                                                                : (el[0] === 'Pruebas')
-                                                                    ? { name: 'settings-outline', backgroundColor: colors.test }
-                                                                    : (el[0] === 'Battery')
-                                                                        ? { name: 'battery-dead-outline', backgroundColor: colors.warning }
-                                                                        : { name: 'help-circle-outline', backgroundColor: colors.other }
-                                            } />
-                                    )
-                                })}
-                            </ScrollView>
+                            {
+                                (report === 'ap-ci')
+                                    ?
+                                    <View style={{ flexDirection: orientation === Orientation.portrait ? 'row' : 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                        {Percentajes(percentajes)}
+                                    </View>
+                                    :
+                                    <ScrollView horizontal={orientation === Orientation.portrait} alwaysBounceHorizontal={orientation === Orientation.portrait} showsHorizontalScrollIndicator={false} >
+                                        {Percentajes(percentajes)}
+                                    </ScrollView>
+                            }
                         </View>
                     )
                 else return undefined;
             } else { return undefined }
         } else { return undefined }
-    }, [data, colors, orientation]);
+    }, [data, colors, orientation, report]);
 
     const _renderData = useCallback((filter?: filterEvents) => {
         if (data && data.cuentas) {

@@ -136,6 +136,7 @@ export const IconMenu = React.forwardRef<Modal, IconPropsMenu>(
             <>
                 <IconButton
                     ref={icon}
+                    iconsize={30}
                     disabled={disabled}
                     name={open ? 'ellipsis-horizontal-circle-outline' : 'ellipsis-vertical-circle-outline'}
                     color={colors.primary}

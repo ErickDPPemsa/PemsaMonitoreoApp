@@ -50,7 +50,7 @@ export const SelectAccountScreen = ({ navigation, route }: Props) => {
     const { control, handleSubmit, reset, setValue: setValueForm, formState } = useForm<Accout>({ defaultValues: { name: '', report: '' } });
     const [report, setReport] = useState<typeof reports>();
     const [dates, setDates] = useState<Array<{ name: string, date?: formatDate }>>();
-    const [isSelected, setIsSelected] = useState(true);
+    const [isSelected, setIsSelected] = useState(false);
     const isFocus = useIsFocused();
     const dispatch = useAppDispatch();
 

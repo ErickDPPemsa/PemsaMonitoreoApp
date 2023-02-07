@@ -28,6 +28,7 @@ interface PropsModal {
     text?: string;
     icon?: boolean;
     timeClose?: number;
+    btnClose?: boolean;
 }
 
 export type rootStackScreen = {

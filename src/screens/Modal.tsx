@@ -13,7 +13,7 @@ import { IconButton } from '../components/IconButton';
 import { Orientation } from '../interfaces/interfaces';
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'Modal'> { };
-export const Modal = ({ navigation, route: { params: { type, icon, subtitle, text, title, timeClose } } }: Props) => {
+export const Modal = ({ navigation, route: { params: { type, icon, subtitle, text, title, timeClose, btnClose = true } } }: Props) => {
     const { theme: { colors, dark, roundness }, orientation } = useAppSelector(state => state.app);
     const backgroundColor: string = dark ? Color(colors.background).darken(.4).toString() : colors.background;
 
@@ -95,7 +95,7 @@ export const Modal = ({ navigation, route: { params: { type, icon, subtitle, tex
             alignItems: 'center'
         },
         modalBody: {
-            flex: 1
+            flex: 8
         },
         modalFooter: {
             flex: 1,
@@ -139,10 +139,11 @@ export const Modal = ({ navigation, route: { params: { type, icon, subtitle, tex
                         maxHeight: 500
                     }
             ]}>
-                <View style={{ flex: 1 }}>
+                <View style={{ width: '100%', height: '100%' }}>
                     {
                         (title || subtitle) &&
                         <View style={styles.modalHeader}>
+                            {_renderIcon()}
                             <View style={{ flex: 1, alignItems: 'center' }}>
                                 {title && <Text variant='titleLarge'>{title}</Text>}
                                 {subtitle && <Text variant='titleMedium'>{subtitle}</Text>}
@@ -151,13 +152,12 @@ export const Modal = ({ navigation, route: { params: { type, icon, subtitle, tex
                         </View>
                     }
                     <View style={styles.modalBody}>
-                        {_renderIcon()}
                         <ScrollView>
                             <Text variant='titleSmall' style={{ textAlign: 'center' }}>{text}</Text>
                         </ScrollView>
                     </View>
                     <View style={styles.modalFooter}>
-                        <Button mode='contained' contentStyle={{ marginHorizontal: 5, alignSelf: 'flex-end' }} text='cerrar' onPress={() => navigation.goBack()} />
+                        {btnClose && <Button mode='contained' contentStyle={{ marginHorizontal: 5, alignSelf: 'flex-end' }} text='cerrar' onPress={() => navigation.goBack()} />}
                     </View>
                 </View>
             </View>

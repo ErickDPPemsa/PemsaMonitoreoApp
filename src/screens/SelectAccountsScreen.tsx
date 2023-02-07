@@ -1,8 +1,8 @@
 import { CommonActions, useIsFocused, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useContext, useLayoutEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { View, KeyboardAvoidingView, TouchableHighlight } from 'react-native';
-import { modDate } from '../functions/functions';
+import { View, KeyboardAvoidingView, TouchableHighlight, Pressable, Switch } from 'react-native';
+import { getKeys, getKeysAccount, modDate } from '../functions/functions';
 import { formatDate, Account, Orientation } from '../interfaces/interfaces';
 import { useEffect } from 'react';
 import { Select } from '../components/select/Select';
@@ -20,7 +20,7 @@ import Color from 'color';
 import { stylesApp } from '../App';
 import { Fab } from '../components/Fab';
 import { rootStackScreen } from '../navigation/Stack';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import TextInput from '../components/Input/TextInput';
 import { IconButton } from '../components/IconButton';
 import Text from '../components/Text';
@@ -49,14 +49,17 @@ const reports: Array<{ name: string, value: TypeReport, msg: string, setDates: b
     { name: 'ESTADO DE SUCURSALES', value: 'state', msg: '', setDates: false },
     { name: 'HORARIOS DE APERTURAS Y CIERRES', value: 'apci-week', msg: '', setDates: false },
 ]
+type ResultAccountScreenProps = NativeStackNavigationProp<rootStackScreen, 'Drawer'>;
 
 interface Props extends DrawerScreenProps<RootDrawerNavigator, 'SelectAccountsScreen'> { };
+
 export const SelectAccountsScreen = ({ navigation, route }: Props) => {
-    const navStack = useNavigation();
+    const stack = useNavigation<ResultAccountScreenProps>();
     const { theme: { colors, fonts, roundness }, orientation, accountsSelected } = useAppSelector(state => state.app);
     const { control, handleSubmit, reset, setValue: setValueForm } = useForm<Accout>({ defaultValues: { name: '', start: '', end: '', report: '' } });
     const [report, setReport] = useState<typeof reports>();
     const [dates, setDates] = useState<Array<{ name: string, date?: formatDate }>>();
+    const [isSelected, setIsSelected] = useState(false);
     const [hideCalendars, setHideCalendars] = useState<boolean>(false);
     const dispatch = useAppDispatch();
     const isFocus = useIsFocused();
@@ -74,18 +77,18 @@ export const SelectAccountsScreen = ({ navigation, route }: Props) => {
             if (missingDates?.length === 0) {
                 const start = dates.find(f => f.name === 'Fecha inicio')?.date?.date.date ?? modDate({}).date.date;
                 const end = dates.find(f => f.name === 'Fecha final')?.date?.date.date ?? modDate({}).date.date;
-                if (accountsSelected.length === 1) {
-                    // navigate('ResultAccountScreen', { account: { name: accounts[0].Nombre, code: parseInt(accounts[0].CodigoCte) }, end, report: report[0].value, start, keys: getKeys(report[0].value), typeAccount: 1 })
-                } else {
-                    // navigate('ResultAccountsScreen', {
-                    //     accounts: valueSelect ? valueSelect.map(v => { return { name: v.Nombre, code: parseInt(v.CodigoCte) } }).sort() : [],
-                    //     report: report[0].value,
-                    //     keys: report[0].value === 'batery' ? getKeysAccount(report[0].value) : getKeys(report[0].value),
-                    //     typeAccount: 1,
-                    //     start: (report[0].value === 'ap-ci' || report[0].value === 'event-alarm') ? start : undefined,
-                    //     end: (report[0].value === 'ap-ci' || report[0].value === 'event-alarm') ? end : undefined,
-                    //     nameGroup: 'Custom Group'
-                    // });
+                if (accountsSelected.length === 1 && report && (report[0].value === 'ap-ci' || report[0].value === 'event-alarm')) {
+                    stack.navigate('ResultAccountScreen', { account: accountsSelected[0], start, end, filter: isSelected, keys: getKeys(report[0].value), typeAccount: 1, report: report[0].value })
+                } else if (accountsSelected.length > 0) {
+                    stack.navigate('ResultAccountsScreen', {
+                        accounts: accountsSelected.map(v => { return { name: v.Nombre, code: parseInt(v.CodigoCte) } }).sort(),
+                        report: report[0].value,
+                        keys: report[0].value === 'batery' ? getKeysAccount(report[0].value) : getKeys(report[0].value),
+                        typeAccount: 1,
+                        start: (report[0].value === 'ap-ci' || report[0].value === 'event-alarm') ? start : undefined,
+                        end: (report[0].value === 'ap-ci' || report[0].value === 'event-alarm') ? end : undefined,
+                        nameGroup: 'Custom Group'
+                    })
                 }
             } else {
                 Toast.show({ type: 'customError', text1: 'Error al asignar Fechas', text2: `Fechas faltantes:\n${missingDates}` })
@@ -109,11 +112,10 @@ export const SelectAccountsScreen = ({ navigation, route }: Props) => {
                             showSoftInputOnFocus={false}
                             iconRight={'chevron-down'}
                             onPress={() => {
-
-                                navStack.dispatch(CommonActions.navigate('Search', { type: 'Accounts' }));
+                                stack.navigate('Search', { type: 'Accounts' });
                             }}
                             onRightPress={() => {
-                                navStack.dispatch(CommonActions.navigate('Search', { type: 'Accounts' }));
+                                stack.navigate('Search', { type: 'Accounts' });
                             }}
                             containerStyle={{
                                 borderRadius: roundness,
@@ -234,6 +236,27 @@ export const SelectAccountsScreen = ({ navigation, route }: Props) => {
                                     justifyContent: 'flex-end'
                                 }
                             ]}>
+                                {
+                                    report && (report[0].value === 'ap-ci' || report[0].value === 'event-alarm') && accountsSelected.length === 1 && <Pressable onPress={() => setIsSelected(!isSelected)}>
+                                        {
+                                            ({ pressed }) => {
+                                                return (
+                                                    <View style={[
+                                                        {
+                                                            borderRadius: roundness,
+                                                            flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+                                                            paddingVertical: 10, paddingHorizontal: 5
+                                                        },
+                                                        pressed && { backgroundColor: Color(colors.primary).fade(.9).toString() },
+                                                    ]}>
+                                                        <Text variant='labelLarge'>Filtar eventos</Text>
+                                                        <Switch onChange={() => setIsSelected(!isSelected)} value={isSelected} thumbColor={colors.primary} trackColor={{ false: undefined, true: Color(colors.primary).fade(.8).toString() }} />
+                                                    </View>
+                                                )
+                                            }
+                                        }
+                                    </Pressable>
+                                }
                                 <Calendar
                                     calendars={calendars}
                                     backgroundColor={colors.background}

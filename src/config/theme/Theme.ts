@@ -1,6 +1,7 @@
 import { DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationDefaultTheme, Theme } from '@react-navigation/native';
 import { ThemeBase } from '../../types/types';
 import { typescale } from '../typescale';
+import Color from 'color';
 
 const whiteTheme: ThemeBase = {
   dark: false,
@@ -105,6 +106,12 @@ const CombinedLightTheme: ThemeBase & Theme = {
     card: whiteTheme.colors.background,
     text: whiteTheme.colors.onSurface,
     border: whiteTheme.colors.outline,
+    info: Color(whiteTheme.colors.info).darken(.3).toString(),
+    danger: Color(whiteTheme.colors.danger).darken(.3).toString(),
+    warning: Color(whiteTheme.colors.warning).darken(.3).toString(),
+    success: Color(whiteTheme.colors.success).darken(.3).toString(),
+    question: Color(whiteTheme.colors.question).darken(.3).toString(),
+    test: Color(whiteTheme.colors.test).darken(.3).toString(),
     // notification: 'steelblue',
   },
 };

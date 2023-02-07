@@ -186,26 +186,26 @@ export const ReportEvents = async ({ body, type }: { body: GetReport, type?: Typ
         } else if (type === 'state') {
             if (data && data.cuentas) {
                 let abiertas: number = 0, cerradas: number = 0, sinEstado: number = 0;
-                abiertas = Math.round((data.cuentas.filter(f => (f.eventos && f.eventos[0].DescripcionEvent.toLowerCase().includes('apert'))).length * 100) / data.cuentas.length);
-                cerradas = Math.round((data.cuentas.filter(f => (f.eventos && f.eventos[0].DescripcionEvent.toLowerCase().includes('cierr'))).length * 100) / data.cuentas.length);
-                sinEstado = Math.round((data.cuentas.filter(f => f.eventos === undefined).length * 100) / data.cuentas.length);
+                abiertas = data.cuentas.filter(f => (f.eventos && f.eventos.find(f => AP.find(ff => ff === f.CodigoAlarma)))).length;
+                cerradas = data.cuentas.filter(f => (f.eventos && f.eventos.find(f => CI.find(ff => ff === f.CodigoAlarma)))).length;
+                sinEstado = data.cuentas.filter(f => !f.eventos).length;
                 const percentajes: Percentajes = {
                     abiertas: {
-                        percentaje: abiertas,
+                        percentaje: (abiertas * 100) / data.cuentas.length,
                         total: data.cuentas.length,
                         events: abiertas,
                         label: 'Abiertas',
                         text: 'Sucursales abiertas'
                     },
                     cerradas: {
-                        percentaje: cerradas,
+                        percentaje: (cerradas * 100) / data.cuentas.length,
                         total: data.cuentas.length,
                         events: cerradas,
                         label: 'Cerradas',
                         text: 'Sucursales cerradas'
                     },
                     sinEstado: {
-                        percentaje: sinEstado,
+                        percentaje: (sinEstado * 100) / data.cuentas.length,
                         total: data.cuentas.length,
                         events: sinEstado,
                         label: 'Sin estado',
