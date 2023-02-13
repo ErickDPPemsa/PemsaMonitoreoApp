@@ -1,7 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useContext } from 'react';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
-import { Modal } from '../screens/Modal';
 import { LogInScreen } from '../screens/LogInScreen';
 import { HandleContext } from '../context/HandleContext';
 import { IntroductionScreen } from '../screens/IntroductionScreen';
@@ -18,18 +17,9 @@ import { SearchScreen } from '../screens/SearchScreen';
 import { ChangePasswordScreen } from '../screens/ChangePasswordScreen';
 import { DetailsInfoScreen } from '../screens/DetailsInfoScreen';
 import { ResultAccountScreen } from '../screens/ResultAccountScreen';
-import { TypeReport, typeAccount, filterEvents } from '../types/types';
+import { TypeReport, typeAccount } from '../types/types';
 import { ResultAccountsScreen } from '../screens/ResultAccountsScreen';
-
-interface PropsModal {
-    type: 'info' | 'error' | 'question' | 'warning' | 'success';
-    title?: string;
-    subtitle?: string;
-    text?: string;
-    icon?: boolean;
-    timeClose?: number;
-    btnClose?: boolean;
-}
+import { TableScreen } from '../screens/TableScreen';
 
 export type rootStackScreen = {
     SplashScreen: undefined;
@@ -37,7 +27,6 @@ export type rootStackScreen = {
     LogInScreen: undefined;
     Drawer: undefined;
     Search: { type: 'Account' | 'Accounts' | 'Groups' };
-    Modal: PropsModal;
     TCAP: { user: User } | undefined;
     ChangePasswordScreen: undefined;
     DetailsInfoScreen: undefined;
@@ -59,6 +48,13 @@ export type rootStackScreen = {
         keys: Array<Key<Events>> | Array<Key<Account>>,
         typeAccount: typeAccount
     };
+    TableScreen: {
+        events: Array<Events>;
+        keys: Array<Key<Events>> | Array<Key<Account>>;
+        name: string;
+        report: string;
+        address: string;
+    }
 
 }
 
@@ -98,6 +94,7 @@ export const StackScreens = () => {
                             <Stack.Screen name='ResultAccountScreen' component={ResultAccountScreen} />
                             <Stack.Screen name='ResultAccountsScreen' component={ResultAccountsScreen} />
                             <Stack.Screen name='Search' component={SearchScreen} options={{ animation: 'fade_from_bottom' }} />
+                            <Stack.Screen name='TableScreen' component={TableScreen} />
                         </Stack.Group>
                         :
                         <Stack.Group screenOptions={{ headerShown: false }} key={"Public"}>
@@ -107,7 +104,6 @@ export const StackScreens = () => {
                         </Stack.Group>
                 }
                 <Stack.Group screenOptions={{ presentation: 'transparentModal' }}>
-                    <Stack.Screen name="Modal" options={{ headerShown: false, animation: 'fade_from_bottom' }} component={Modal} />
                     <Stack.Screen name="TCAP" options={{ headerShown: false, }} component={TCAPScreen} />
                 </Stack.Group>
             </Stack.Navigator>

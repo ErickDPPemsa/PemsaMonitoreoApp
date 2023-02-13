@@ -13,6 +13,7 @@ import { useMutation } from '@tanstack/react-query';
 import { CheckAuth } from '../api/Api';
 import { HandleContext } from '../context/HandleContext';
 import { setUser } from '../features/appSlice';
+import Animated, { BounceOut, FadeInUp, FlipInEasyY } from 'react-native-reanimated';
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'TCAP'> { };
 export const TCAPScreen = ({ navigation, route: { params } }: Props) => {
@@ -32,9 +33,9 @@ export const TCAPScreen = ({ navigation, route: { params } }: Props) => {
     });
 
     return (
-        <View style={{ flex: 1 }}>
+        <Animated.View entering={FadeInUp} style={{ flex: 1 }}>
             <SafeAreaView style={{ width: '100%', height: '100%', backgroundColor: colors.backdrop, justifyContent: 'center', alignItems: 'center' }}>
-                <View style={[
+                <Animated.View entering={FlipInEasyY} exiting={BounceOut} style={[
                     {
                         position: 'absolute',
                         width: '95%',
@@ -61,9 +62,9 @@ export const TCAPScreen = ({ navigation, route: { params } }: Props) => {
                         }
                         <Button text='cancel' mode='contained' contentStyle={{ backgroundColor: colors.danger }} onPress={() => navigation.goBack()} />
                     </View>
-                </View>
+                </Animated.View>
             </SafeAreaView>
-        </View>
+        </Animated.View>
     )
 }
 

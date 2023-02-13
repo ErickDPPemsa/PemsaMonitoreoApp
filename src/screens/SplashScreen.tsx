@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useRef } from 'react';
-import { View, Animated, Easing } from 'react-native';
+import React, { useContext, useEffect } from 'react';
+import { View } from 'react-native';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import Toast from 'react-native-toast-message';
@@ -9,11 +9,11 @@ import { rootStackScreen } from '../navigation/Stack';
 import { HandleContext } from '../context/HandleContext';
 import { useMutation } from '@tanstack/react-query';
 import { CheckAuth } from '../api/Api';
+import Animated, { BounceIn, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'SplashScreen'> { };
 
 export const SplashScreen = ({ navigation }: Props) => {
-    const anim = useRef(new Animated.Value(1)).current;
     const { theme: { dark, colors } } = useAppSelector(state => state.app);
     const { handleError } = useContext(HandleContext);
     const appDispatch = useAppDispatch();
@@ -45,24 +45,14 @@ export const SplashScreen = ({ navigation }: Props) => {
         }
     }, time ?? 1500);
 
-    Animated.loop(
-        Animated.sequence([
-            Animated.timing(anim, {
-                toValue: 1.1,
-                duration: 400,
-                easing: Easing.ease,
-                useNativeDriver: true,
-            }),
-            Animated.timing(anim, {
-                toValue: 1,
-                duration: 400,
-                easing: Easing.ease,
-                useNativeDriver: true,
-            })
-        ])
-    ).start();
+    const scale = useSharedValue(.8);
 
     useEffect(() => {
+        scale.value = withRepeat(
+            withTiming(1, { duration: 370 }),
+            10000,
+            true,);
+
         EncryptedStorage.getItem('token').then(async token => {
             if (!token) {
                 start({});
@@ -73,12 +63,19 @@ export const SplashScreen = ({ navigation }: Props) => {
     }, []);
 
 
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ scale: scale.value }],
+        };
+    });
+
     return (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Animated.Image
+            <Animated.Image entering={BounceIn}
                 style={[
-                    { width: 150, height: 150, transform: [{ scale: anim, }] },
-                    dark && { tintColor: colors.onSurface }
+                    { width: 150, height: 150 },
+                    dark && { tintColor: colors.onSurface },
+                    animatedStyle
                 ]}
                 source={require('../assets/logo4.png')}
             />

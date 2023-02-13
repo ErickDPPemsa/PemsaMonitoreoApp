@@ -1,10 +1,8 @@
-import React, { useContext, useEffect } from 'react';
+import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Row } from './Row';
+import { Row, TableRow } from './Row';
 import { stylesApp } from '../../App';
-import { TableProvider, TableContext } from '../../context/TableContext';
-import { Key } from '../../interfaces/interfaces';
-import { HandleContext } from '../../context/HandleContext';
+import { Key, Orientation } from '../../interfaces/interfaces';
 import { useAppSelector } from '../../app/hooks';
 import Color from 'color';
 import Text from '../Text';
@@ -18,143 +16,61 @@ type Props<T> = {
     isShowHeader?: boolean;
     Data: Array<T>;
     titles: Array<Key<T>>;
-    fontSize: number;
-    scrollRefHeader?: React.RefObject<ScrollView>;
-    pagination?: {
-        iconBackgroundColor: string;
-    };
-    isDataObject?: boolean;
     showIndices?: boolean;
-    colorBackgroundTable?: string;
 }
 
-const TableState = ({ children }: any) => {
-    return (
-        <TableProvider>
-            {children}
-        </TableProvider>
-    )
-}
-
-const RenderTable = <T extends Object>({ Header, Data, titles, fontSize, scrollRefHeader, pagination, isDataObject, isShowHeader = true, showIndices, colorBackgroundTable }: Props<T>) => {
-    // const [events, setEvents] = useState<Array<any>>();
-    // const [filter, setfilter] = useState<Array<any>>();
-    // const numberOfItemsPerPageList = [15, 25, 35, 50];
-    // const [page, setPage] = useState(0);
-    // const [numberOfItemsPerPage, setdNumberOfItemsPerPage] = useState(numberOfItemsPerPageList[0]);
-    const { data, updateData } = useContext(TableContext);
-    // const { screenWidth } = useContext(HandleContext);
-    const { theme: { colors, roundness } } = useAppSelector(state => state.app);
-
-    useEffect(() => {
-        const data = Data.map((events, idx) => {
-            let arr = titles.map(el => (Array.isArray(el.key)) ? el.key.map(k => events[k]).join(' ').toString() : String(events[el.key]));
-            return arr;
-        });
-        updateData(data);
-        // setEvents(data);
-        // setfilter(data);
-        // setfilter(pagination ? data.slice(0, numberOfItemsPerPage) : data);
-    }, [Data, titles, pagination]);
-
-    // useEffect(() => {
-    //     if (events) {
-    //         setfilter(events.slice(0, numberOfItemsPerPage));
-    //     }
-    // }, [numberOfItemsPerPage]);
-
-    // useEffect(() => {
-    //     setPage(0);
-    //     console.log('entro');
-    // }, []);
-
-    //version erick
-
-    // const _renderPagination = React.useCallback(() => {
-    //     if (events && pagination) {
-    //         const from = page * numberOfItemsPerPage;
-    //         const to = Math.min((page + 1) * numberOfItemsPerPage, events.length);
-
-    //         return (
-    //             <View style={[styles.containerPagination]}>
-    //                 <View>
-    //                     <SimpleSelect
-    //                         data={numberOfItemsPerPageList}
-    //                         onChange={value => setdNumberOfItemsPerPage(value)}
-    //                         value={numberOfItemsPerPage}
-    //                         Width={50}
-    //                     />
-    //                     <Text style={{ fontWeight: 'bold', padding: 3 }}>Filas</Text>
-    //                 </View>
-    //                 <Text style={{ fontWeight: 'bold', paddingHorizontal: 5 }}>{`${from + 1}-${to} of ${events.length}`}</Text>
-
-    //                 <View style={{ flexDirection: 'row' }}>
-    //                     <IconButton icon={'skip-previous-outline'} onPress={() => { }} />
-    //                     <IconButton icon={'chevron-left'} onPress={() => {
-    //                         setPage(page - 1)
-    //                     }} />
-    //                     <IconButton icon={'chevron-right'} onPress={() => {
-    //                         if (to <= events.length) {
-    //                             setPage(page + 1);
-    //                         }
-    //                     }} />
-    //                     <IconButton icon={'skip-next-outline'} onPress={() => { }} />
-    //                 </View>
-    //             </View>
-    //         )
-    //     }
-    //     return undefined
-    // }, [events, pagination, numberOfItemsPerPage, page, numberOfItemsPerPageList]);
-
+const Table = <T extends Object>({ Header, Data, titles, isShowHeader = true, showIndices = true }: Props<T>) => {
+    const { theme: { colors, roundness, dark }, orientation } = useAppSelector(state => state.app);
+    const backgroundColor: string = dark ? Color(colors.background).darken(.4).toString() : colors.background;
     const _renderHeader = React.useCallback(() => {
         if (Header)
             return (
-                <View style={{ paddingVertical: 5 }}>
-                    {Header.title && <Text variant='labelLarge'>{Header.title}</Text>}
-                    {Header.subtitle && <Text variant='labelLarge'>{Header.subtitle}</Text>}
+                <View style={[{ paddingVertical: 5 }, orientation === Orientation.landscape && { flexDirection: 'row', justifyContent: 'space-between' }]}>
+                    {Header.title && <Text style={{ marginRight: 10 }} variant='labelLarge'>{Header.title}</Text>}
+                    {Header.subtitle && <Text style={{ marginRight: 10 }} variant='labelLarge'>{Header.subtitle}</Text>}
                 </View>
             )
-        return undefined;
-    }, [Header, colors])
+        return null;
+    }, [Header, colors, orientation])
 
     const _renderTH = React.useCallback(() => {
-        if (titles && isShowHeader)
+        if (titles && isShowHeader) {
+            const tamCol = titles.map(s => { return { size: s.size ?? 10, center: s.center } });
+            const data = titles.map(r => r.label);
             return (
-                <Row tamCol={titles.map(s => { return { size: s.size ?? 10, center: s.center } })} styleLabel={{ fontWeight: 'bold', textTransform: 'uppercase', color: colors.text }} fontSize={fontSize + 2} data={titles.map(r => r.label)} />
+                <Row tamCol={showIndices ? [{ size: 30, center: true }, ...tamCol] : [...tamCol]} styleLabel={{ fontWeight: 'bold', textTransform: 'uppercase', color: colors.text }} data={showIndices ? ["#", ...data] : [...data]} />
             )
-        return undefined;
-    }, [titles, isShowHeader, colors]);
+        }
+        return null;
+    }, [titles, isShowHeader, colors, showIndices]);
 
     const _renderBody = React.useCallback(() => {
-        if (data)
-            if (data.length === 0) return <Text style={{ textAlign: 'center', width: 100 }}>Sin Eventos</Text>;
+        if (Data)
+            if (Data.length === 0) return <Text style={{ textAlign: 'center', width: 100 }}>Sin Eventos</Text>;
             else
                 return (
-                    data.map((ev, idx) =>
-                        <Row
-                            key={idx + ev.toString()}
-                            tamCol={titles.map(s => { return { size: s.size ?? 10, center: s.center } })}
-                            style={{
-                                borderBottomColor: Color(colors.text).fade(.9).toString(), borderBottomWidth: 1
-                            }}
-                            styleLabel={{ color: colors.text }}
-                            fontSize={fontSize}
-                            data={ev} />
+                    Data.map((ev, idx) =>
+                        <TableRow
+                            key={idx + 1}
+                            data={ev}
+                            titles={titles}
+                            style={{ borderBottomColor: colors.backdrop, borderBottomWidth: 1 }}
+                            indice={showIndices ? idx + 1 : undefined}
+                        />
                     )
                 )
         return <Text style={{ textAlign: 'center', width: 100, color: colors.text }}>Sin Eventos</Text>;
-    }, [data, colors, Color])
+    }, [Data, colors, showIndices])
 
     return (
         <View style={[styles.container, {
-            backgroundColor: colorBackgroundTable ?? colors.background,
+            backgroundColor,
             borderRadius: roundness * 2,
-            padding: 5
+            padding: 5,
+            alignSelf: 'center'
         }]}>
             {_renderHeader()}
-            <ScrollView horizontal={true}
-                onScroll={({ nativeEvent }) => { scrollRefHeader?.current?.scrollTo({ x: nativeEvent.contentOffset.x, y: nativeEvent.contentOffset.y, animated: true }); }}
-            >
+            <ScrollView horizontal={true}>
                 <View>
                     {_renderTH()}
                     <ScrollView >
@@ -162,16 +78,7 @@ const RenderTable = <T extends Object>({ Header, Data, titles, fontSize, scrollR
                     </ScrollView>
                 </View>
             </ScrollView>
-            {/* {_renderPagination()} */}
         </View>
-    )
-}
-
-const Table = <T extends Object>(props: Props<T>) => {
-    return (
-        <TableState>
-            <RenderTable {...props} />
-        </TableState>
     )
 }
 

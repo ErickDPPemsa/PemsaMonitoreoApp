@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Pressable, PressableProps, View, StyleProp, ViewStyle, LayoutRectangle, Modal, SafeAreaView, TextStyle } from 'react-native';
+import { Pressable, PressableProps, View, StyleProp, ViewStyle, Modal, SafeAreaView } from 'react-native';
 import IconVI from 'react-native-vector-icons/Ionicons';
 import Color from 'color';
 import { useAppSelector } from '../app/hooks';
@@ -8,31 +8,12 @@ import { Orientation } from '../interfaces/interfaces';
 import { Platform } from 'react-native';
 import { Button } from './Button';
 import { stylesApp } from '../App';
-import { NativeTouchEvent } from 'react-native';
+import Animated, { FadeInUp, LightSpeedInRight, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
 interface Props extends PressableProps {
     name: string;
     iconsize?: number;
     color?: string;
-}
-
-const renderContent = ({ children }: { children: React.ReactNode }) => {
-    return (
-        React.Children.toArray(children as React.ReactNode | Array<React.ReactNode>)
-            .filter((child) => child != null && typeof (child) !== 'boolean')//aseguramos que es un Elemento
-            .map((child, i) => {
-                //@ts-ignore
-                if (!React.isValidElement(child) || ![Text].includes(child.type)) return child;
-
-                const props: { style?: StyleProp<TextStyle>; } = {};
-                //@ts-ignore
-                if (child.type === Text) {
-                    props.style = [{ flex: 1, marginHorizontal: 10 }]
-                }
-
-                return React.cloneElement(child, props);
-            })
-    )
 }
 
 export const IconButton = React.forwardRef<View, Props>(
@@ -42,24 +23,74 @@ export const IconButton = React.forwardRef<View, Props>(
         const iconProps = { color, name };
         const size: number = 25;
         const iconColor: string = dark ? colors.primary : Color(colors.primary).darken(.3).toString();
+        const rotation = useSharedValue(0);
+
+        const animatedStyle = useAnimatedStyle(() => {
+            return {
+                transform: [{ rotateZ: `${rotation.value}deg` }],
+            };
+        });
+
+        const start = () => {
+            rotation.value = withSequence(
+                withTiming(-10, { duration: 50 }),
+                withRepeat(withTiming(10, { duration: 100 }), 6, true),
+                withTiming(0, { duration: 50 })
+            );
+        }
+
+        const scale = useSharedValue(1);
+
+        const animatedStyleIcon = useAnimatedStyle(() => {
+            return {
+                transform: [{ scale: scale.value }],
+            };
+        });
+
+
+        useEffect(() => {
+            start();
+        }, []);
+
+        useEffect(() => {
+            start();
+        }, [name]);
 
         return (
-            <Pressable {...props} ref={ref}>
-                {
-                    ({ pressed }) =>
-                        <View style={[
-                            {
-                                width: (iconsize ?? size) + 5,
-                                height: (iconsize ?? size) + 5,
-                                borderRadius: (iconsize ?? size) * 2,
-                                backgroundColor: pressed ? Color(iconProps.color ?? colors.primary).fade(.8).toString() : undefined,
-                                justifyContent: 'center', alignItems: 'center'
-                            }
-                        ]}>
-                            <IconVI {...iconProps} size={iconsize ?? size} color={disabled ? colors.surfaceDisabled : iconProps.color ?? iconColor} />
-                        </View>
-                }
-            </Pressable >
+            <Animated.View style={[animatedStyleIcon]}>
+                <Pressable
+                    {...props}
+                    ref={ref}
+                    onPressIn={(press) => {
+                        props.onPressIn && props.onPressIn(press);
+                        scale.value = withSequence(
+                            withTiming(1.095, { duration: 10 }),
+                        );
+                    }}
+                    onPressOut={(press) => {
+                        props.onPressOut && props.onPressOut(press);
+                        scale.value = withSequence(
+                            withTiming(1, { duration: 10 }),
+                        );
+                    }}
+                >
+                    {
+                        ({ pressed }) =>
+                            <Animated.View style={[
+                                {
+                                    width: (iconsize ?? size) + 5,
+                                    height: (iconsize ?? size) + 5,
+                                    borderRadius: (iconsize ?? size) * 2,
+                                    backgroundColor: pressed ? Color(iconProps.color ?? colors.primary).fade(.8).toString() : undefined,
+                                    justifyContent: 'center', alignItems: 'center'
+                                },
+                                animatedStyle
+                            ]}>
+                                <IconVI {...iconProps} size={iconsize ?? size} color={disabled ? colors.surfaceDisabled : iconProps.color ?? iconColor} />
+                            </Animated.View>
+                    }
+                </Pressable >
+            </Animated.View>
         )
     }
 );
@@ -111,7 +142,7 @@ export const IconMenu = React.forwardRef<Modal, IconPropsMenu>(
             y: number;
             width: number;
             height: number;
-        }>({ x: 0, y: 0, height: 0, width: 0 });
+        }>({ x: 0, y: 0, width: 0, height: 0 });
 
         const icon = useRef<View>(null);
 
@@ -132,6 +163,11 @@ export const IconMenu = React.forwardRef<Modal, IconPropsMenu>(
             updateSizes();
         }, [orientation]);
 
+        useEffect(() => {
+            updateSizes();
+        }, [])
+
+
         return (
             <>
                 <IconButton
@@ -145,37 +181,40 @@ export const IconMenu = React.forwardRef<Modal, IconPropsMenu>(
                         updateSizes();
                     }}
                 />
-                <Modal ref={ref} visible={open} animationType='fade' hardwareAccelerated transparent supportedOrientations={['landscape', 'portrait']} >
-                    <SafeAreaView style={{ flex: 1, backgroundColor: Color(colors.backdrop).fade(.3).toString() }}>
-                        <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)} />
-                        <View style={[
-                            {
-                                position: 'absolute',
-                                top: iconMeasure.height + iconMeasure.y,
-                                right: (orientation === Orientation.landscape ? screenHeight : screenWidth) - (iconMeasure.x + iconMeasure.width),
-                                backgroundColor: backgroundColor, padding: 10,
-                            },
-                            stylesApp.shadow, { shadowColor: colors.primary, borderRadius: radius, shadowRadius: radius, elevation: 5 }
-                        ]}>
-                            {
-                                menu?.map((op, idx) => {
-                                    return (
-                                        <View key={idx + 1}>
-                                            <Button {...op}
-                                                onPress={(props) => {
-                                                    op.onPress && op.onPress(props);
-                                                    setOpen(!open);
-                                                }}
-                                                variantText='labelMedium'
-                                            />
-                                            {Platform.OS === 'ios' && idx < menu.length - 1 && <View style={{ width: '100%', borderBottomWidth: 1, borderBottomColor: Color(colors.background).fade(.2).toString(), backgroundColor: colors.onSurface }} />}
-                                        </View>
-                                    )
-                                })
-                            }
-                        </View>
-                    </SafeAreaView>
-                </Modal>
+                {
+                    iconMeasure &&
+                    <Modal ref={ref} visible={open} animationType='fade' hardwareAccelerated transparent supportedOrientations={['landscape', 'portrait']} >
+                        <SafeAreaView style={{ flex: 1, backgroundColor: Color(colors.backdrop).fade(.3).toString() }}>
+                            <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)} />
+                            <Animated.View entering={LightSpeedInRight} style={[
+                                {
+                                    position: 'absolute',
+                                    top: iconMeasure.y,
+                                    right: (orientation === Orientation.landscape ? screenHeight : screenWidth) - (iconMeasure.x + iconMeasure.width),
+                                    backgroundColor: backgroundColor, padding: 10,
+                                },
+                                stylesApp.shadow, { shadowColor: colors.primary, borderRadius: radius, shadowRadius: radius, elevation: 5 }
+                            ]}>
+                                {
+                                    menu?.map((op, idx) => {
+                                        return (
+                                            <Animated.View entering={FadeInUp.delay(100 + ((idx + 1) * 20))} key={idx + 1}>
+                                                <Button {...op}
+                                                    onPress={(props) => {
+                                                        op.onPress && op.onPress(props);
+                                                        setOpen(!open);
+                                                    }}
+                                                    variantText='labelMedium'
+                                                />
+                                                {Platform.OS === 'ios' && idx < menu.length - 1 && <View style={{ width: '100%', borderBottomWidth: 1, borderBottomColor: Color(colors.background).fade(.2).toString(), backgroundColor: colors.onSurface }} />}
+                                            </Animated.View>
+                                        )
+                                    })
+                                }
+                            </Animated.View>
+                        </SafeAreaView>
+                    </Modal>
+                }
             </>
         )
     });

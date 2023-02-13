@@ -86,7 +86,7 @@ const darkTheme: ThemeBase = {
     inversePrimary: "rgb(43, 92, 176)",
     surfaceDisabled: "rgba(227, 226, 230, 0.12)",
     onSurfaceDisabled: "rgba(227, 226, 230, 0.38)",
-    backdrop: "rgba(46, 48, 56, 0.5)",
+    backdrop: "rgba(46, 48, 60, 0.4)",
     info: '#3fc3ee',
     danger: '#ff7782',
     warning: '#dfd32b',

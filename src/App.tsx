@@ -15,6 +15,8 @@ import Toast, { BaseToastProps } from 'react-native-toast-message';
 import Color from 'color';
 import Text from './components/Text';
 import { setOrientation } from './features/appSlice';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { AlertProvider } from './components/Alert/AlertContext';
 
 export const navigationRef = createNavigationContainerRef();
 
@@ -32,11 +34,13 @@ export const App = () => {
     return (
         <SafeAreaProvider initialMetrics={initialWindowMetrics}>
             <StoreProvider store={store}>
-                <QueryClientProvider client={queryClient}>
-                    <HandleState>
-                        <Root />
-                    </HandleState>
-                </QueryClientProvider>
+                <AlertProvider>
+                    <QueryClientProvider client={queryClient}>
+                        <HandleState>
+                            <Root />
+                        </HandleState>
+                    </QueryClientProvider>
+                </AlertProvider>
             </StoreProvider>
         </SafeAreaProvider >
     )
@@ -46,14 +50,16 @@ export const Root = () => {
     const { theme } = useAppSelector((state) => state.app);
     const dispatch = useAppDispatch();
     return (
-        <NavigationContainer theme={theme} ref={navigationRef}>
-            <OrientationLocker
-                orientation='UNLOCK'
-                onChange={resp => resp.includes('PORTRAIT') ? dispatch(setOrientation(Orientation.portrait)) : dispatch(setOrientation(Orientation.landscape))}
-            />
-            <StackScreens />
-            <Toast config={toastConfig} position='bottom' />
-        </NavigationContainer>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <NavigationContainer theme={theme} ref={navigationRef}>
+                <OrientationLocker
+                    orientation='UNLOCK'
+                    onChange={resp => resp.includes('PORTRAIT') ? dispatch(setOrientation(Orientation.portrait)) : dispatch(setOrientation(Orientation.landscape))}
+                />
+                <StackScreens />
+                <Toast config={toastConfig} position='bottom' />
+            </NavigationContainer>
+        </GestureHandlerRootView>
     )
 }
 

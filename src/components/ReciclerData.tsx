@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { LayoutRectangle, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { DataProvider, LayoutProvider, RecyclerListView, RecyclerListViewProps } from 'recyclerlistview';
+import { LayoutRectangle, Pressable, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { DataProvider, LayoutProvider, RecyclerListView } from 'recyclerlistview';
 import Text from './Text';
 import { useAppSelector } from '../app/hooks';
 import { Orientation } from '../interfaces/interfaces';
 import Color from 'color';
-import { Loading } from './Loading';
+import Animated, { FadeIn, SlideInLeft, SlideOutRight } from 'react-native-reanimated';
 
 interface Props<T> {
     data: Array<T>;
@@ -54,21 +54,24 @@ export const ReciclerData = <T extends Object>(props: Props<T>) => {
     const _renderRow = useCallback((type: string | number, data: any, index: number, extendedState?: object | undefined) => {
         const isSelected = selected.find(f => f[valueField] === data[valueField]);
         return (
-            <TouchableOpacity
+            <Pressable
                 onPress={() => _onSelect(data)}
-                style={[
+                style={({ pressed }) => [
                     styles.item,
                     {
                         borderRadius: roundness * 2,
                         marginVertical: 2,
                         paddingHorizontal: 10,
-                        borderTopWidth: .3, borderColor: Color(colors.outline).fade(.5).toString()
+                        borderBottomWidth: .3, borderColor: Color(colors.outline).fade(.5).toString()
                     },
-                    isSelected && { backgroundColor: colors.primaryContainer }
+                    isSelected && { backgroundColor: colors.primaryContainer },
+                    pressed && { backgroundColor: Color(colors.primary).fade(.8).toString() }
                 ]}
             >
-                <Text variant='labelMedium'>{data[labelField]}</Text>
-            </TouchableOpacity>
+                <Animated.View entering={SlideInLeft}>
+                    <Text variant='labelMedium'>{data[labelField]}</Text>
+                </Animated.View>
+            </Pressable>
         )
     }, [dataProvider, colors, selected, _onSelect, roundness, labelField]);
 
@@ -79,7 +82,6 @@ export const ReciclerData = <T extends Object>(props: Props<T>) => {
 
     return (
         <View style={{ flex: 1 }} onLayout={({ nativeEvent: { layout } }) => setLayout(layout)}>
-            {/* */}
             {
                 data.length === 0
                     ? <Text>Sin coincidencias</Text>

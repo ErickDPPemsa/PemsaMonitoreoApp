@@ -1,34 +1,28 @@
-import { CommonActions, useIsFocused, useNavigation } from '@react-navigation/native';
-import React, { useCallback, useContext, useLayoutEffect, useState } from 'react';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import React, { useCallback, useLayoutEffect, useState } from 'react';
 import { Controller, SubmitHandler, useForm } from 'react-hook-form';
-import { View, KeyboardAvoidingView, TouchableHighlight, Pressable, Switch } from 'react-native';
+import { View, KeyboardAvoidingView, Pressable, Switch } from 'react-native';
 import { getKeys, getKeysAccount, modDate } from '../functions/functions';
-import { formatDate, Account, Orientation } from '../interfaces/interfaces';
+import { formatDate, Orientation } from '../interfaces/interfaces';
 import { useEffect } from 'react';
 import { Select } from '../components/select/Select';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
-import { Loading } from '../components/Loading';
 import Toast from 'react-native-toast-message';
 import { ScrollView } from 'react-native-gesture-handler';
-import { useMyAccounts } from '../hooks/useQuery';
 import { TypeReport } from '../types/types';
 import { Calendar } from '../components/calendar/Calendar';
-import { HandleContext } from '../context/HandleContext';
 import { Button } from '../components/Button';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Color from 'color';
 import { stylesApp } from '../App';
-import { Fab } from '../components/Fab';
 import { rootStackScreen } from '../navigation/Stack';
-import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import TextInput from '../components/Input/TextInput';
 import { IconButton } from '../components/IconButton';
 import Text from '../components/Text';
 import { updateAccounts } from '../features/appSlice';
 import { DrawerScreenProps } from '@react-navigation/drawer';
 import { RootDrawerNavigator } from '../navigation/Drawer';
-
-type Stack = NativeStackScreenProps<rootStackScreen>;
+import Animated, { SlideOutLeft, SlideOutRight } from 'react-native-reanimated';
 
 type Accout = {
     name: string;
@@ -201,34 +195,38 @@ export const SelectAccountsScreen = ({ navigation, route }: Props) => {
                     {
                         <KeyboardAvoidingView>
                             {_renderSelectAccounts()}
-                            <View style={[{ padding: 10, maxHeight: 200, backgroundColor: Color(colors.primary).fade(.8).toString(), borderRadius: roundness * 2 }]}>
-                                <ScrollView >
-                                    {
-                                        accountsSelected?.map(acc =>
-                                            <View
-                                                key={acc.CodigoCte}
-                                                style={[
-                                                    stylesApp.shadow,
-                                                    {
-                                                        backgroundColor: colors.background,
-                                                        flexDirection: 'row',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'space-between',
-                                                        borderRadius: roundness * 2,
-                                                        paddingHorizontal: 10,
-                                                        paddingVertical: 5,
-                                                        marginVertical: 4,
-                                                        elevation: 5
-                                                    }
-                                                ]}
-                                            >
-                                                <Text style={[fonts.titleMedium, { color: colors.text, textAlign: 'left' }]}>{acc.Nombre}</Text>
-                                                <IconButton name='close' onPress={() => { dispatch(updateAccounts(accountsSelected.filter(f => f.CodigoCte !== acc.CodigoCte))) }} />
-                                            </View>
-                                        )
-                                    }
-                                </ScrollView>
-                            </View>
+                            {
+                                accountsSelected && accountsSelected.length > 0 &&
+                                <View style={[{ padding: 10, maxHeight: 200, backgroundColor: Color(colors.primary).fade(.85).toString(), borderRadius: roundness * 2 }]}>
+                                    <ScrollView >
+                                        {
+                                            accountsSelected.map(acc =>
+                                                <Animated.View
+                                                    key={acc.CodigoCte}
+                                                    style={[
+                                                        stylesApp.shadow,
+                                                        {
+                                                            backgroundColor: colors.background,
+                                                            flexDirection: 'row',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            borderRadius: roundness * 2,
+                                                            paddingHorizontal: 10,
+                                                            paddingVertical: 5,
+                                                            marginVertical: 4,
+                                                            elevation: 5
+                                                        }
+                                                    ]}
+                                                    exiting={SlideOutLeft}
+                                                >
+                                                    <Text style={[fonts.titleMedium, { color: colors.text, textAlign: 'left', flex: 1 }]}>{acc.Nombre}</Text>
+                                                    <IconButton name='close' onPress={() => { dispatch(updateAccounts(accountsSelected.filter(f => f.CodigoCte !== acc.CodigoCte))) }} />
+                                                </Animated.View>
+                                            )
+                                        }
+                                    </ScrollView>
+                                </View>
+                            }
                             {_renderSelectReport()}
                             <View style={[
                                 orientation === Orientation.landscape && {
@@ -237,7 +235,8 @@ export const SelectAccountsScreen = ({ navigation, route }: Props) => {
                                 }
                             ]}>
                                 {
-                                    report && (report[0].value === 'ap-ci' || report[0].value === 'event-alarm') && accountsSelected.length === 1 && <Pressable onPress={() => setIsSelected(!isSelected)}>
+                                    report && report.length > 0 && (report[0].value === 'ap-ci' || report[0].value === 'event-alarm') && accountsSelected.length === 1 &&
+                                    <Pressable onPress={() => setIsSelected(!isSelected)}>
                                         {
                                             ({ pressed }) => {
                                                 return (

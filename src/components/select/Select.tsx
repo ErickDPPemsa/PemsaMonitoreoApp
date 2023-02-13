@@ -6,6 +6,7 @@ import Color from 'color';
 import { Orientation } from '../../interfaces/interfaces';
 import TextInput from '../Input/TextInput';
 import { ReciclerData } from '../ReciclerData';
+import Animated, { FadeInDown, ZoomInEasyDown, ZoomOutEasyDown } from 'react-native-reanimated';
 
 interface Props<T> {
     valueField: keyof T;
@@ -32,7 +33,7 @@ export const Select = <T extends Object>(props: Props<T>) => {
         maxHeight,
     } = props;
 
-    const { theme: { colors, roundness, dark }, orientation, insets } = useAppSelector(state => state.app);
+    const { theme: { colors, roundness, dark }, orientation, insets, screenHeight } = useAppSelector(state => state.app);
     const heightOption: number = 40;
     const ref = useRef<View>(null);
     const search = useRef<NativeTextInput>(null);
@@ -103,18 +104,18 @@ export const Select = <T extends Object>(props: Props<T>) => {
     }, [value, visible, label, colors]);
 
     const _renderModal = useCallback(() => {
+        let top: number | undefined = (maxHeight ?? 0) + (layout?.y ?? 0) + (layout?.height ?? 0);
+        if (top === 0 || (screenHeight - (top + (maxHeight ?? 0)) < 100)) { top = undefined }
         return (
             <Modal
                 transparent
                 animationType={animationType}
                 visible={visible}
-                hardwareAccelerated
                 supportedOrientations={['landscape', 'portrait']}
             >
-                <StatusBar backgroundColor={colors.backdrop} />
                 <SafeAreaView style={[modal.Modal, { backgroundColor: colors.backdrop }]}>
-                    <Pressable style={{ width: '100%', height: '100%' }} onPress={() => _close()} />
-                    <View style={[
+                    <Pressable style={{ width: '100%', height: '100%' }} onPress={_close} />
+                    <Animated.View entering={ZoomInEasyDown.duration(200)} exiting={ZoomOutEasyDown.duration(200)} style={[
                         modal.Container,
                         {
                             height: maxHeight ?? '100%',
@@ -131,7 +132,9 @@ export const Select = <T extends Object>(props: Props<T>) => {
                             }
                             : maxHeight ? {
                                 position: 'absolute',
-                                top: (layout && ((layout.height * 2) + layout.y + maxHeight) + (Platform.OS === 'ios' ? insets ? insets.top - insets.bottom + 5 : 0 : 0)) ?? undefined
+                                // top: (layout && ((layout.height * 2) + layout.y + maxHeight) + (Platform.OS === 'ios' ? insets ? insets.top - insets.bottom + 5 : 0 : 0)) ?? undefined
+                                top,
+                                bottom: top === undefined ? insets?.bottom ?? 0 : undefined
                             } : {}
                     ]}>
                         <ReciclerData
@@ -142,11 +145,11 @@ export const Select = <T extends Object>(props: Props<T>) => {
                             onChange={(item) => onSelect([item])}
                             selected={itemsSelected}
                         />
-                    </View>
+                    </Animated.View>
                 </SafeAreaView>
             </Modal>
         )
-    }, [visible, keyboardHeight, colors, dark, heightOption, maxHeight, insets, layout, orientation, backgroundColor]);
+    }, [visible, keyboardHeight, colors, dark, heightOption, maxHeight, insets, layout, orientation, backgroundColor, screenHeight]);
 
     return (
         <View style={{ justifyContent: 'center', flex: 1 }} ref={ref} onLayout={({ nativeEvent: { layout } }) => setLayout(layout)}>

@@ -1,5 +1,5 @@
 import { createContext, useEffect } from "react";
-import { ColorSchemeName, Dimensions, useColorScheme } from "react-native";
+import { ColorSchemeName, Dimensions, Platform, useColorScheme } from "react-native";
 import { Orientation } from '../interfaces/interfaces';
 import { useAppDispatch } from '../app/hooks';
 import { logOut, setInsets, updateTheme, setScreen, setOrientation } from '../features/appSlice';
@@ -8,7 +8,9 @@ import { CombinedDarkTheme, CombinedLightTheme } from "../config/theme/Theme";
 import Toast from "react-native-toast-message";
 import { EdgeInsets, useSafeAreaInsets } from "react-native-safe-area-context";
 // import { PERMISSIONS, requestMultiple, checkMultiple } from 'react-native-permissions';
-// import RNFetchBlob, { FetchBlobResponse } from 'rn-fetch-blob';
+import RNFetchBlob, { FetchBlobResponse } from 'rn-fetch-blob';
+import EncryptedStorage from 'react-native-encrypted-storage';
+import { baseUrl } from "../api/Api";
 // import { baseUrl } from "../api/Api";
 // import { logOut } from '../features/appSlice';
 
@@ -86,45 +88,49 @@ export const HandleProvider = ({ children }: any) => {
     }
 
     const downloadReport = async ({ endpoint, tokenTemp, data, fileName }: funcDownload) => {
-        // const url = `${baseUrl}/reports/${endpoint}`;
-        // const token = tokenTemp ?? await AsyncStorage.getItem('token');
-        // const headers: HeadersInit_ | undefined = {};
-        // (token) ? Object.assign(headers, { 'Content-type': 'application/json', 'Authorization': `Bearer ${token}` }) : Object.assign(headers, { 'Content-type': 'application/json', });
+        const url = `${baseUrl}/download/${endpoint}`;
+        const token = tokenTemp ?? await EncryptedStorage.getItem('token');
+        const headers: HeadersInit_ | undefined = {};
+        (token) ? Object.assign(headers, { 'Content-type': 'application/json', 'Authorization': `Bearer ${token}` }) : Object.assign(headers, { 'Content-type': 'application/json', });
         // dispatch({ type: 'updateIsDownload', payload: true });
-        // const path = (Platform.OS === 'ios' ? RNFetchBlob.fs.dirs.DocumentDir : RNFetchBlob.fs.dirs.DownloadDir)
-        // const directory = path + '/' + fileName;
+        const path = (Platform.OS === 'ios' ? RNFetchBlob.fs.dirs.DocumentDir : RNFetchBlob.fs.dirs.DownloadDir)
+        const directory = path + '/' + fileName;
 
-        // RNFetchBlob
-        //     .fetch('POST', url, headers, JSON.stringify(data))
-        //     .then(async (resp: FetchBlobResponse) => {
-        //         if (resp.type === 'base64') {
-        //             try {
-        //                 const exist = await RNFetchBlob.fs.exists(directory);
-        //                 if (exist) {
-        //                     const files = await RNFetchBlob.fs.ls(path);
-        //                     const numFiles = files.filter(a => a.includes(fileName.replace('.pdf', ''))).length;
-        //                     const newFileName = fileName.replace('.pdf', ` ${numFiles}.pdf`);
-        //                     const newDirectory = path + '/' + newFileName;
-        //                     await RNFetchBlob.fs.createFile(newDirectory, resp.data, 'base64');
-        //                     Toast.show({ text1: `${newFileName}`, text2: 'Creado existosamente', autoHide: true, visibilityTime: 2000 });
-        //                 } else {
-        //                     await RNFetchBlob.fs.createFile(directory, resp.data, 'base64');
-        //                     Toast.show({ text1: `${fileName}`, text2: 'Creado existosamente', autoHide: true, visibilityTime: 2000 });
-        //                 }
-        //             } catch (error) {
-        //                 throw (String(error))
-        //             }
-        //         }
-        //         else {
-        //             if (resp.type === 'utf8') throw (JSON.stringify(resp.data, null, 3));
-        //             else { throw (JSON.stringify(resp, null, 3)); }
-        //         }
-        //     })
-        //     .catch(error => {
-        //         handleError(String(error));
-        //         Toast.show({ text1: 'Error', text2: String(error), type: 'error' });
-        //     })
-        //     .finally(() => dispatch({ type: 'updateIsDownload', payload: false }))
+        RNFetchBlob
+            .fetch('POST', url, headers, JSON.stringify(data))
+            .then(async (resp: FetchBlobResponse) => {
+                if (resp.type === 'base64') {
+                    try {
+                        const exist = await RNFetchBlob.fs.exists(directory);
+                        if (exist) {
+                            const files = await RNFetchBlob.fs.ls(path);
+                            const numFiles = files.filter(a => a.includes(fileName.replace('.pdf', ''))).length;
+                            const newFileName = fileName.replace('.pdf', ` ${numFiles}.pdf`);
+                            const newDirectory = path + '/' + newFileName;
+                            await RNFetchBlob.fs.createFile(newDirectory, resp.data, 'base64');
+                            Toast.show({ text1: `${newFileName}`, text2: 'Creado existosamente', autoHide: true, visibilityTime: 2000 });
+                        } else {
+                            await RNFetchBlob.fs.createFile(directory, resp.data, 'base64');
+                            Toast.show({ text1: `${fileName}`, text2: 'Creado existosamente', autoHide: true, visibilityTime: 2000 });
+                        }
+                    } catch (error) {
+                        throw (String(error))
+                    }
+                }
+                else {
+                    if (resp.type === 'utf8') throw (JSON.stringify(resp.data, null, 3));
+                    else { throw (JSON.stringify(resp, null, 3)); }
+                }
+            })
+            .catch(error => {
+                handleError(String(error));
+                Toast.show({ text1: 'Error', text2: String(error), type: 'error' });
+            })
+            .finally(() => {
+                console.log('Terminado');
+
+                // dispatch({ type: 'updateIsDownload', payload: false })
+            })
     }
 
     return (

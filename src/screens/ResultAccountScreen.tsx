@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Animated, ListRenderItemInfo, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, ListRenderItemInfo, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useReport } from '../hooks/useQuery';
 import { Loading } from '../components/Loading';
 import { Account, Events, percentaje, Orientation, Percentajes } from '../interfaces/interfaces';
@@ -17,6 +17,8 @@ import { rootStackScreen } from '../navigation/Stack';
 import { Alarm, AP, APCI, Bat, CI, filterEvents, otros, Prue } from '../types/types';
 import { RefreshControl } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { AlertContext } from '../components/Alert/AlertContext';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'ResultAccountScreen'> { };
@@ -28,12 +30,13 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
     const { data, isLoading, isFetching, refetch, error } = useReport({ accounts: [parseInt(account.CodigoCte)], dateStart: start, dateEnd: end, type: report, typeAccount, key: String(account.CodigoCte) });
     const queryClient = useQueryClient();
     const { handleError, downloadReport } = useContext(HandleContext);
-    const [view, setView] = useState<'table' | 'default'>('default');
+    const { alert } = useContext(AlertContext);
+    const [view, setView] = useState<'table' | 'default'>('table');
 
     const refModal = useRef<Modal>(null);
 
 
-    const keyQuery = ["Events", String(account), report, start, end];
+    const keyQuery = ["Events", String(account.CodigoCte), report, start, end];
     const pages: Array<{ title: string, key: filterEvents, nameIcon: string, color: string }> = report === 'ap-ci'
         ?
         [
@@ -48,7 +51,6 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
             { title: 'Baterias', key: 'Bat', nameIcon: 'battery-charging-outline', color: colors.warning },
             { title: 'Otros', key: 'otros', nameIcon: 'help-circle-outline', color: colors.other },
         ];
-
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -73,7 +75,7 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
                             text: 'Descargar pdf con gráfica',
                             icon: 'document-outline',
                             onPress: () => {
-                                // Download(true);
+                                Download({ type: 'pdf', withGrap: true });
                             },
                             contentStyle: { ...styles.btnMenu }
                         },
@@ -81,7 +83,15 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
                             text: 'Descargar pdf',
                             icon: 'document-outline',
                             onPress: () => {
-                                // Download(true);
+                                Download({ type: 'pdf' });
+                            },
+                            contentStyle: { ...styles.btnMenu }
+                        },
+                        {
+                            text: 'Descargar excel',
+                            icon: 'document-outline',
+                            onPress: () => {
+                                Download({ type: 'xlsx' });
                             },
                             contentStyle: { ...styles.btnMenu }
                         },
@@ -98,7 +108,7 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
                         },
                         {
                             text: 'Recargar',
-                            icon: 'document-outline',
+                            icon: 'refresh-outline',
                             onPress: () => refetch(),
                             contentStyle: { ...styles.btnMenu }
                         },
@@ -109,7 +119,7 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
     }, [navigation, isLoading, isFetching, setView, view]);
 
     const renderItem = useCallback(({ index, item, separators }: ListRenderItemInfo<Events>) => (
-        <View style={[styles.item, { borderRadius: roundness, backgroundColor: colors.background, shadowColor: colors.primary, alignSelf: 'center', width: orientation === Orientation.landscape ? screenWidth + 100 : ((screenWidth / 100) * 95), height: 80, }]}>
+        <Animated.View entering={FadeIn} style={[styles.item, { borderRadius: roundness, backgroundColor: colors.background, shadowColor: colors.primary, alignSelf: 'center', width: orientation === Orientation.landscape ? screenWidth + 100 : ((screenWidth / 100) * 95), height: 80, }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={{ flex: 1, flexDirection: 'row' }}>
                     <View >
@@ -124,14 +134,16 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
                 <IconButton
                     iconsize={30}
                     name='information-circle-outline'
-                    onPress={() => navigation.navigate('Modal', { type: 'info', btnClose: false, icon: true, subtitle: item.FechaOriginal + ' ' + item.Hora, text: JSON.stringify(item, null, 3) })}
+                    onPress={() => {
+                        alert({ type: 'info', icon: true, text: JSON.stringify(item, null, 3) });
+                    }}
                 />
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
                 <Text adjustsFontSizeToFit numberOfLines={1} style={{ flex: 1 }} variant='labelMedium'>{`${item.DescripcionZona} ${item.NombreUsuario}`.split('').length <= 1 ? 'Sistema / Llavero' : `${item.DescripcionZona} ${item.NombreUsuario}`}</Text>
                 <Text variant='labelMedium'># {item.CodigoUsuario} {item.CodigoZona}</Text>
             </View>
-        </View>
+        </Animated.View>
     ), [colors, roundness, orientation]);
 
     const _renderPercentajes = useCallback(() => {
@@ -217,7 +229,7 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
                         {
                             (view === 'default')
                                 ?
-                                <Animated.FlatList
+                                <FlatList
                                     data={Events}
                                     renderItem={renderItem}
                                     keyExtractor={(_, idx) => `${idx}`}
@@ -241,10 +253,6 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
                                         Header={{ title: Nombre, subtitle: Direccion }}
                                         Data={Events}
                                         titles={keys}
-                                        fontSize={11}
-                                        pagination={{ iconBackgroundColor: colors.primaryContainer }}
-                                        colorBackgroundTable={dark ? Color(colors.background).darken(.4).toString() : colors.background}
-                                        showIndices
                                     />
                                 </View>
                         }
@@ -263,7 +271,7 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
         if (error) handleError(String(error));
     }, [error])
 
-    const Download = (withGrap?: boolean) => {
+    const Download = ({ type, withGrap }: { withGrap?: boolean, type: 'pdf' | 'xlsx' }) => {
         downloadReport({
             data: {
                 accounts: [parseInt(account.CodigoCte)],
@@ -272,15 +280,14 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
                 dateStart: start,
                 dateEnd: end
             },
-            endpoint: (report === 'ap-ci') ? 'download-ap-ci' : 'download-event-alarm',
-            fileName: `${(report === 'ap-ci') ? 'Apertura y cierre' : 'Evento de alarma'} ${start} ${end} ${account.Nombre}.pdf`
+            endpoint: `${(report === 'ap-ci') ? 'ap-ci' : 'alarm'}/${type}`,
+            fileName: `${(report === 'ap-ci') ? 'Apertura y cierre' : 'Evento de alarma'} ${start} ${end} ${account.Nombre}.${type}`
         })
     }
 
 
     return (
         <>
-            <Loading loading={isLoading} refresh={isFetching} />
             <Text variant='titleSmall' style={[{ borderLeftWidth: 3, borderColor: colors.primary }]}>  Entre las fechas {start} a {end}</Text>
             {
                 (!filter)
@@ -323,6 +330,7 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
                         </Tab.Navigator>
                     </View>
             }
+            <Loading loading={isLoading} refresh={isFetching} />
         </>
     )
 }

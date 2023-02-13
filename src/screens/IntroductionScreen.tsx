@@ -1,11 +1,8 @@
 import React, { useContext, useRef, useState } from 'react';
-import { StyleSheet, View, Animated, StyleProp, TextStyle, Image, TouchableHighlight } from 'react-native';
+import { StyleSheet, View, Animated, StyleProp, TextStyle, Image } from 'react-native';
 import PagerView from 'react-native-pager-view';
 import { useAppSelector } from '../app/hooks';
 import { ScrollView } from 'react-native-gesture-handler';
-import Icon from 'react-native-vector-icons/Ionicons';
-import Color from 'color';
-import { Alert } from '../components/Alert';
 import Toast from 'react-native-toast-message';
 import Text from '../components/Text';
 import { Orientation } from '../interfaces/interfaces';
@@ -13,6 +10,10 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { rootStackScreen } from '../navigation/Stack';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { IconButton } from '../components/IconButton';
+import { stylesApp } from '../App';
+import { AlertContext } from '../components/Alert/AlertContext';
+import { Button } from '../components/Button';
 
 type PagerViewOnPageScrollEventData = { position: number; offset: number; }
 
@@ -119,13 +120,13 @@ export const IntroductionScreen = ({ navigation }: Props) => {
     const scrollOffsetAnimatedValue = React.useRef(new Animated.Value(0)).current;
     const positionAnimatedValue = React.useRef(new Animated.Value(0)).current;
     const [page, setPage] = useState<number>(0);
-    const [showPages, setShowPages] = useState<boolean>(false);
     const { theme: { colors, dark }, orientation } = useAppSelector(state => state.app);
     const Pager = useRef<PagerView>(null);
+    const { alert, clear } = useContext(AlertContext);
 
     const omitWellcome = async () => {
         try {
-            setShowPages(false);
+            clear();
             await EncryptedStorage.setItem('isWellcomeOff', 'true');
             navigation.replace('LogInScreen');
         } catch (error) { Toast.show({ type: 'error', text1: 'Error', text2: `${error}` }); }
@@ -133,11 +134,10 @@ export const IntroductionScreen = ({ navigation }: Props) => {
 
     const cancel = async () => {
         try {
-            setShowPages(false);
+            clear();
             await EncryptedStorage.setItem('isWellcomeOff', 'false');
             navigation.replace('LogInScreen');
         } catch (error) {
-            console.log(error);
             Toast.show({ type: 'error', text1: 'Error', text2: `${error}` });
         }
     }
@@ -185,30 +185,28 @@ export const IntroductionScreen = ({ navigation }: Props) => {
                 </AnimatedPagerView >
                 <Dots positionAnimatedValue={positionAnimatedValue} scrollOffsetAnimatedValue={scrollOffsetAnimatedValue} />
                 <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                    <TouchableHighlight
-                        style={[{ backgroundColor: colors.primary, padding: 8, borderRadius: 100, }]}
-                        underlayColor={Color(colors.primary).fade(.5).toString()}
+                    <IconButton name='arrow-forward-outline'
+                        iconsize={37}
+                        color={colors.background}
+                        style={{ backgroundColor: colors.primary, borderRadius: 37, ...stylesApp.shadow, elevation: 5, shadowColor: colors.primary }}
                         onPress={() => {
-                            if (page === data.length - 1) setShowPages(true);
-                            Pager.current?.setPage(page + 1);
+                            if (page === data.length - 1) {
+                                alert({
+                                    icon: true,
+                                    type: 'question',
+                                    text: '¿Desea omitir la bienvenida?',
+                                    btnQuestion:
+                                        <>
+                                            <Button mode='contained' contentStyle={{ marginHorizontal: 3 }} text='si' onPress={omitWellcome} />
+                                            <Button mode='contained' contentStyle={{ marginHorizontal: 3, backgroundColor: colors.danger }} text='no' onPress={cancel} />
+                                        </>
+                                });
+                            } else {
+                                Pager.current?.setPage(page + 1);
+                            }
                         }}
-                    >
-                        <Icon name='arrow-forward-outline' size={37} color={colors.background} />
-                    </TouchableHighlight>
+                    />
                 </View>
-                <Alert
-                    icon
-                    type='question'
-                    title='¿Desea omitir la bienvenida?'
-                    questionProps={{
-                        // funcCancel: () => { setShowPages(false), navigation.replace('LogInScreen'); },
-                        funcCancel: cancel,
-                        funcConfirm: omitWellcome,
-                        textCancel: 'no',
-                        textConfirm: 'si'
-                    }}
-                    visible={showPages}
-                />
             </View >
         </SafeAreaView>
     );

@@ -1,6 +1,5 @@
-import React, { useCallback, useContext, useEffect, useLayoutEffect, useState } from 'react';
+import React, { useContext, useEffect, useLayoutEffect, useState } from 'react';
 import { View, Platform } from 'react-native';
-import Text from '../components/Text';
 import { Props } from './SearchScreen';
 import { IconButton } from '../components/IconButton';
 import { useAppSelector, useAppDispatch } from '../app/hooks';
@@ -14,8 +13,6 @@ import { useMyAccounts } from '../hooks/useQuery';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { updateAccounts } from '../features/appSlice';
 import { HandleContext } from '../context/HandleContext';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { AccountsSelectedScreen } from './AccountsSelectedScreen';
 
 export const ListAccountScreen = ({ navigation, route: { params: { type } } }: Props) => {
     const { insets, theme: { colors, roundness, dark }, accountsSelected } = useAppSelector(state => state.app);

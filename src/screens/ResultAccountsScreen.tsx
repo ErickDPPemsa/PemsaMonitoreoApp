@@ -1,10 +1,8 @@
-import React, { createRef, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { View, SectionList, ScrollView, Animated, ListRenderItemInfo, StyleSheet, Modal, Platform } from 'react-native';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { View, ScrollView, Animated, ListRenderItemInfo, StyleSheet, Modal, Platform, Keyboard } from 'react-native';
 import { useAppSelector } from '../app/hooks';
 import { Loading } from '../components/Loading';
-import Table from '../components/table/Table';
 import { useReport } from '../hooks/useQuery';
-import { Row } from '../components/table/Row';
 import { AP, CI, TypeReport } from '../types/types';
 import { TargetPercentaje } from '../components/TargetPercentaje';
 import Color from 'color';
@@ -20,6 +18,9 @@ import Text from '../components/Text';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { rootStackScreen } from '../navigation/Stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Row } from '../components/table/Row';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { ReciclerData } from '../components/ReciclerData';
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'ResultAccountsScreen'> { };
 
@@ -34,7 +35,7 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
     const [filterData, setFilterData] = useState<typeof data>();
 
     const queryClient = useQueryClient();
-    const keyQuery = ["Events", JSON.stringify(accounts), report, start, end];
+    const keyQuery = ["Events", "[" + accounts.map(a => a.code).sort() + "]", report, start, end];
     const refModal = useRef<Modal>(null);
 
     const dates: { start: formatDate, end: formatDate } = { start: modDate({ days: -30 }), end: modDate({}) }
@@ -43,24 +44,55 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
 
     const backgroundColor: string = dark ? Color(colors.background).darken(.4).toString() : colors.background;
 
+    const [textQueryValue, setTextQueryValue] = useState<string>('');
+    const debaucedValue = useDebouncedValue(textQueryValue, 300);
 
-    const Download = (withGrap?: boolean) => {
+    const Download = ({ type, withGrap, name }: { withGrap?: boolean, type: 'pdf' | 'xlsx', name?: string }) => {
+        let endpoint: string = '', fileName: string = '';
+
+        switch (report) {
+            case 'ap-ci':
+                endpoint = `ap-ci/${type}`;
+                fileName = `Apertura y cierre ${start} ${end} ${name}.${type}`;
+                break;
+            case 'event-alarm':
+                endpoint = `alarm/${type}`;
+                fileName = `Evento de alarma ${start} ${end} ${name}.${type}`;
+                break;
+            case 'batery':
+                endpoint = `batery/${type}`;
+                fileName = `Estado de baterias ${name}.${type}`;
+                break;
+            case 'state':
+                endpoint = `state/${type}`;
+                fileName = `Estado de sucursales ${name}.${type}`;
+                break;
+            case 'apci-week':
+                endpoint = `ap-ci-week/${type}`;
+                fileName = `Horarios de aperturas y cierres ${name}.${type}`;
+                break;
+
+            default: break;
+        }
+
         downloadReport({
             data: {
-                accounts: accounts.map(a => a.code),
+                accounts: accounts.map(acc => acc.code),
                 showGraphs: withGrap ? true : false,
                 typeAccount,
                 dateStart: start,
                 dateEnd: end
             },
-            endpoint: (report === 'apci-week') ? 'download-ap-week' : (report === 'state') ? 'download-state' : 'download-batery',
-            fileName: `${(report === 'apci-week') ? 'Aperturas y Cieres una semana' : (report === 'state') ? 'Estado de sucursales' : 'Estados de bateria'} ${start ?? ''} ${end ?? ''} ${nameGroup}.pdf`
+            endpoint,
+            fileName
         })
     }
 
+
     useLayoutEffect(() => {
         navigation.setOptions({
-            title: (report === 'ap-ci') ? 'APERTURA Y CIERRE' : (report === 'event-alarm') ? 'EVENTO DE ALARMA' : (report === 'batery') ? 'Problemas de batería' : (report === 'state') ? 'Estado de sucursales' : 'Horario de aperturas y cierres',
+            title: (report === 'ap-ci') ? 'Apertura y cierre' : (report === 'event-alarm') ? 'Evento de alarma' : (report === 'batery') ? 'Problemas de batería' : (report === 'state') ? 'Estado de sucursales' : 'Horario de aperturas y cierres',
+            headerTitleStyle: { ...fonts.titleLarge },
             headerLeft: (() =>
                 <IconButton
                     iconsize={30}
@@ -81,7 +113,7 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
                             text: 'Descargar pdf con gráfica',
                             icon: 'document-outline',
                             onPress: () => {
-                                // Download(true);
+                                Download({ type: 'pdf', withGrap: true, name: (data?.nombre) ? data.nombre : 'Grupo personalizado, cuentas individuales' })
                             },
                             contentStyle: { ...styles.btnMenu }
                         },
@@ -89,13 +121,21 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
                             text: 'Descargar pdf',
                             icon: 'document-outline',
                             onPress: () => {
-                                // Download(true);
+                                Download({ type: 'pdf', name: (data?.nombre) ? data.nombre : 'Grupo personalizado, cuentas individuales' })
+                            },
+                            contentStyle: { ...styles.btnMenu }
+                        },
+                        {
+                            text: 'Descargar excel',
+                            icon: 'document-outline',
+                            onPress: () => {
+                                Download({ type: 'xlsx', name: (data?.nombre) ? data.nombre : 'Grupo personalizado, cuentas individuales' })
                             },
                             contentStyle: { ...styles.btnMenu }
                         },
                         {
                             text: 'Recargar',
-                            icon: 'document-outline',
+                            icon: 'refresh-outline',
                             onPress: () => refetch(),
                             contentStyle: { ...styles.btnMenu }
                         },
@@ -103,14 +143,14 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
                 />
             )
         });
-    }, [navigation, isLoading, isFetching]);
+    }, [navigation, isLoading, isFetching, data]);
 
     useEffect(() => {
         setFilterData(data);
     }, [data]);
 
     const _renderPercentajes = useCallback(() => {
-        if (data && data.percentajes && orientation === Orientation.portrait) {
+        if (data && data.percentajes && orientation === Orientation.portrait && !Keyboard.isVisible()) {
             const { percentajes } = data;
             return (
                 <View style={{ paddingVertical: 5 }}>
@@ -153,9 +193,9 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
 
             return (
                 <>
-                    <Row key={'days'} tamCol={[{ size: 30 }, { size: sizeName }, ...tam]} styleLabel={{ fontWeight: 'bold', textTransform: 'uppercase', color: colors.text }} fontSize={11 + 2} data={['', '', ...filterData.fechas]} />
-                    <Row key={'nameDays'} tamCol={[{ size: 30 }, { size: sizeName }, ...tam]} styleLabel={{ fontWeight: 'bold', textTransform: 'uppercase', color: colors.text }} fontSize={11 + 2} data={['', '', ...days]} />
-                    <Row key={'header'} style={{ borderBottomWidth: 1, borderColor: Color(colors.text).fade(.9).toString() }} tamCol={[{ size: 30, center: true }, { size: sizeName }, ...tam]} styleLabel={{ fontWeight: 'bold', textTransform: 'uppercase', color: colors.text }} fontSize={11 + 2} data={['#', 'Nombre', ...ApCi]} />
+                    <Row key={'days'} tamCol={[{ size: 30 }, { size: sizeName }, ...tam]} styleLabel={{ fontWeight: 'bold', textTransform: 'uppercase', color: colors.text }} data={['', '', ...filterData.fechas]} />
+                    <Row key={'nameDays'} tamCol={[{ size: 30 }, { size: sizeName }, ...tam]} styleLabel={{ fontWeight: 'bold', textTransform: 'uppercase', color: colors.text }} data={['', '', ...days]} />
+                    <Row key={'header'} style={{ borderBottomWidth: 1, borderColor: Color(colors.text).fade(.9).toString() }} tamCol={[{ size: 30, center: true }, { size: sizeName }, ...tam]} styleLabel={{ fontWeight: 'bold', textTransform: 'uppercase', color: colors.text }} data={['#', 'Nombre', ...ApCi]} />
                 </>
             )
         }
@@ -200,21 +240,38 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
                                     return '';
                                 });
                                 return (
-                                    <Row key={(idx + 1) + acc.CodigoCte} styleLabel={{ color: colors.text }} style={{ borderBottomWidth: 1, borderColor: Color(colors.text).fade(.9).toString() }} data={[`${idx + 1}`, acc.Nombre, ...test ?? []]} fontSize={11} tamCol={[{ size: 30, center: true }, { size: sizeName }, ...tam]} />
+                                    <Row key={(idx + 1) + acc.CodigoCte} styleLabel={{ color: colors.text }} style={{ borderBottomWidth: 1, borderColor: Color(colors.text).fade(.9).toString() }} data={[`${idx + 1}`, acc.Nombre, ...test ?? []]} tamCol={[{ size: 30, center: true }, { size: sizeName }, ...tam]} />
                                 )
                             } else {
                                 return (
-                                    <Row key={(idx + 1) + acc.CodigoCte} styleLabel={{ color: colors.text }} style={{ borderBottomWidth: 1, borderColor: Color(colors.text).fade(.9).toString() }} data={[`${idx + 1}`, acc.Nombre, ...SN]} fontSize={11} tamCol={[{ size: 30, center: true }, { size: sizeName }, ...tam]} />
+                                    <Row key={(idx + 1) + acc.CodigoCte} styleLabel={{ color: colors.text }} style={{ borderBottomWidth: 1, borderColor: Color(colors.text).fade(.9).toString() }} data={[`${idx + 1}`, acc.Nombre, ...SN]} tamCol={[{ size: 30, center: true }, { size: sizeName }, ...tam]} />
                                 )
                             }
                         })
                     }
-                    <Row key={'days'} tamCol={[]} styleLabel={{ fontWeight: 'bold', textTransform: 'uppercase' }} fontSize={10} data={['']} />
+                    <Row key={'days'} tamCol={[]} styleLabel={{ fontWeight: 'bold', textTransform: 'uppercase' }} data={['']} />
                 </>
             )
         }
         return undefined;
     }, [filterData, colors, dark, Color]);
+
+    useEffect(() => {
+        if (data && data.cuentas) {
+            if (report === 'batery') {
+                setFilterData({ ...data, cuentas: data.cuentas.filter(fil => fil.nombre && fil.nombre.toLowerCase().includes(debaucedValue.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))) })
+            } else if (report === 'state') {
+                setFilterData({ ...data, cuentas: data.cuentas.filter(fil => fil.Nombre.toLowerCase().includes(debaucedValue.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""))) })
+            }
+        }
+    }, [debaucedValue]);
+
+    useEffect(() => {
+        if (textQueryValue.length === 0 && data) {
+            setFilterData(data);
+        }
+    }, [textQueryValue]);
+
 
     const _renderTables = useCallback((report: TypeReport) => {
         if (filterData)
@@ -235,47 +292,29 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
         if (report === 'ap-ci' || report === 'event-alarm') {
             if (filterData?.cuentas) {
                 return (
-                    <View style={{ paddingVertical: 5 }}>
-                        <SectionList
-                            sections={filterData.cuentas.map(acc => { return { title: { name: acc.Nombre, address: acc.Direccion, ref: createRef<ScrollView>() }, data: [{ events: acc.eventos ?? [] }] } })}
-                            renderItem={({ item, section }) => {
-                                return (
-                                    <></>
-                                    // <Table
-                                    //     // scrollRefHeader={section.title.ref}
-                                    //     Data={item.events}
-                                    //     /**@ts-ignore */
-                                    //     titles={keys}
-                                    // fontSize={10}
-                                    // isShowHeader={false}
-                                    // colorBackgroundTable={dark ? Color(colors.background).darken(.4).toString() : colors.background}
-                                    // showIndices
-                                    // />
-                                )
-                            }}
-                            renderSectionHeader={({ section }) => (
-                                <View style={{ marginHorizontal: 10, backgroundColor: dark ? Color(colors.background).darken(.4).toString() : colors.background, borderRadius: roundness }}>
-                                    <Text style={{ paddingHorizontal: 5 }}>{section.title.name}</Text>
-                                    <Text style={{ paddingHorizontal: 5 }}>{section.title.address}</Text>
-                                    {/* <ScrollView ref={section.title.ref} horizontal showsHorizontalScrollIndicator={false}>
-                                        <Row
-                                            data={keys.map(r => r.label)}
-                                            tamCol={keys.map(s => { return { size: s.size ?? 50, center: s.center } })}
-                                            fontSize={13}
-                                            styleLabel={{ padding: 0, margin: 0, textTransform: 'uppercase' }} />
-                                    </ScrollView> */}
-                                </View>
+                    <ReciclerData
+                        data={filterData.cuentas}
+                        labelField={'Nombre'}
+                        valueField={'CodigoCte'}
+                        loading={false}
+                        selected={[]}
+                        onChange={({ eventos, Nombre, Direccion }) =>
+                            navigation.navigate('TableScreen',
+                                {
+                                    events: eventos ?? [],
+                                    keys,
+                                    name: Nombre,
+                                    address: Direccion,
+                                    report: report === 'ap-ci' ? 'Apertura y Cierre' : 'Evento de alarma'
+                                }
                             )}
-                            keyExtractor={(item, idx) => `${idx}`}
-                            stickySectionHeadersEnabled
-                        />
-                    </View>
+                    />
                 )
             }
             return undefined;
         }
         return undefined;
-    }, [filterData, keys, colors, roundness, dark]);
+    }, [filterData, keys, colors, roundness, backgroundColor]);
 
     type dataFilter = "SR" | "CR" | "SE" | "A" | "C" | "S";
 
@@ -406,7 +445,6 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
 
     return (
         <>
-            <Loading loading={isLoading} refresh={isFetching} />
             {_renderPercentajes()}
             <Text style={[{ borderLeftWidth: 3, borderColor: colors.primary, color: colors.text }, fonts.titleMedium]}>  {(data?.nombre) ? data.nombre : 'Grupo personalizado, cuentas individuales'}</Text>
             {
@@ -428,6 +466,7 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
                                         height: 45
                                     }}
                                     iconStyle={{ marginTop: 7 }}
+                                    onChangeText={text => setTextQueryValue(text)}
                                 />
                             </View>
                     }}>
@@ -482,6 +521,7 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
                     : _renderTables(report)
 
             }
+            <Loading loading={isLoading} refresh={isFetching} />
         </>
     )
 }

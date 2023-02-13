@@ -6,6 +6,7 @@ import Color from 'color';
 import { stylesApp } from '../App';
 import Text from './Text';
 import { TypescaleKey } from '../types/types';
+import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
 type ButtonMode = 'text' | 'outlined' | 'contained' | 'elevated' | 'contained-tonal';
 
@@ -122,53 +123,75 @@ export const Button = (props: Props) => {
 
     const buttonStyle = { backgroundColor, borderColor, borderWidth, borderRadius };
 
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ scale: scale.value }],
+        };
+    });
+
     return (
-        <Pressable
-            {...props}
-            style={({ pressed }) => [
-                styles.button,
-                buttonStyle,
-                isMode('elevated') && { ...stylesApp.shadow, backgroundColor: colors.background },
-                pressed && { backgroundColor: colorPressed ?? Color(buttonStyle.backgroundColor).fade(.2).toString() },
-                isMode('text') && pressed && {
-                    backgroundColor: Color(buttonStyle.backgroundColor).alpha(.1).toString()
-                },
-                contentStyle
-            ]}
-        >
-            {({ pressed }) => (
-                <View style={[styles.content, containerStyle]}>
-                    {icon && loading !== true ? (
-                        <View style={styles.icon}>
-                            <Icon
-                                name={icon}
+        <Animated.View style={[animatedStyle]}>
+            <Pressable
+                {...props}
+                style={({ pressed }) => [
+                    styles.button,
+                    buttonStyle,
+                    isMode('elevated') && { ...stylesApp.shadow, backgroundColor: colors.background },
+                    pressed && { backgroundColor: colorPressed ?? Color(buttonStyle.backgroundColor).fade(.2).toString() },
+                    isMode('text') && pressed && {
+                        backgroundColor: Color(buttonStyle.backgroundColor).alpha(.1).toString()
+                    },
+                    contentStyle,
+                ]}
+                onPressIn={(press) => {
+                    props.onPressIn && props.onPressIn(press);
+                    scale.value = withSequence(
+                        withTiming(.98, { duration: 10 }),
+                    );
+                }}
+                onPressOut={(press) => {
+                    props.onPressOut && props.onPressOut(press);
+                    scale.value = withSequence(
+                        withTiming(1, { duration: 10 }),
+                    );
+                }}
+            >
+                {({ pressed }) => (
+                    <View style={[styles.content, containerStyle]}>
+                        {icon && loading !== true ? (
+                            <View style={styles.icon}>
+                                <Icon
+                                    name={icon}
+                                    size={customLabelSize ?? iconSize}
+                                    color={typeof customLabelColor === 'string' ? customLabelColor : textColor}
+                                />
+                            </View>
+                        ) : null}
+                        {loading ? (
+                            <ActivityIndicator
                                 size={customLabelSize ?? iconSize}
                                 color={typeof customLabelColor === 'string' ? customLabelColor : textColor}
+                                style={[styles.icon]}
                             />
-                        </View>
-                    ) : null}
-                    {loading ? (
-                        <ActivityIndicator
-                            size={customLabelSize ?? iconSize}
-                            color={typeof customLabelColor === 'string' ? customLabelColor : textColor}
-                            style={[styles.icon]}
-                        />
-                    ) : null}
-                    <Text
-                        variant={variantText ?? 'labelLarge'}
-                        style={[
-                            styles.label,
-                            (isMode('text') ? icon || loading ? styles.LabelTextAddons : styles.LabelText : styles.Label),
-                            { color: textColor },
-                            uppercase && styles.uppercaseLabel,
-                            labelStyle,
-                            { color: colorTextPressed ?? textColor }
-                        ]}
-                        numberOfLines={1}
-                    >{text}</Text>
-                </View>
-            )}
-        </Pressable>
+                        ) : null}
+                        <Text
+                            variant={variantText ?? 'labelLarge'}
+                            style={[
+                                styles.label,
+                                (isMode('text') ? icon || loading ? styles.LabelTextAddons : styles.LabelText : styles.Label),
+                                { color: textColor },
+                                uppercase && styles.uppercaseLabel,
+                                labelStyle,
+                                { color: colorTextPressed ?? textColor }
+                            ]}
+                            numberOfLines={1}
+                        >{text}</Text>
+                    </View>
+                )}
+            </Pressable>
+        </Animated.View>
     )
 }
 

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import { Image, KeyboardAvoidingView, StyleSheet, View, TextInput as NativeTextInput, TouchableWithoutFeedback, TouchableOpacity } from 'react-native';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { Input } from '../components/Input/Input';
@@ -16,8 +16,9 @@ import { rootStackScreen } from '../navigation/Stack';
 import { Keyboard } from 'react-native';
 import { stylesApp } from '../App';
 import Color from 'color';
-import { Alert } from '../components/Alert';
 import { HandleContext } from '../context/HandleContext';
+import { AlertContext } from '../components/Alert/AlertContext';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 
 type InputsLogIn = {
     email: string,
@@ -28,10 +29,10 @@ interface Props extends NativeStackScreenProps<rootStackScreen, 'LogInScreen'> {
 export const LogInScreen = ({ navigation }: Props) => {
     const { theme: { dark: isDark, colors, roundness }, orientation } = useAppSelector(store => store.app);
     const backgroundColor: string = isDark ? Color(colors.background).darken(.4).toString() : colors.background;
-    const [isHelp, setIsHelp] = useState<boolean>(false);
     const dispatchApp = useAppDispatch();
     const { control, handleSubmit, reset, setValue, formState } = useForm<InputsLogIn>({ defaultValues: { email: '', password: '' } });
     const { handleError } = useContext(HandleContext);
+    const { alert } = useContext(AlertContext);
 
     const { isLoading, mutate } = useMutation(['LogIn'], LogIn, {
         retry: 0,
@@ -57,7 +58,7 @@ export const LogInScreen = ({ navigation }: Props) => {
 
     return (
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-            <View style={[style.container, { backgroundColor: colors.background }]}>
+            <Animated.View entering={FadeInUp} style={[style.container, { backgroundColor: colors.background }]}>
                 <Loading refresh={isLoading} />
                 <View style={[
                     style.auth,
@@ -127,12 +128,9 @@ export const LogInScreen = ({ navigation }: Props) => {
                                 returnKeyType='done'
                                 autoCapitalize='none'
                             />
-                            <TouchableOpacity onPress={() =>
-                                navigation.navigate('Modal', {
-                                    type: 'info',
-                                    icon: true,
-                                    text: 'Contacta a tu titular para recuperar tu contraseña',
-                                })}
+                            <TouchableOpacity onPress={() => {
+                                alert({ type: 'info', icon: true, text: 'Contacta a tu titular para recuperar tu contraseña', title: 'Alerta' });
+                            }}
                                 disabled={isLoading} >
                                 <Text variant='titleSmall' style={[{ textAlign: 'right', marginVertical: 15 }]}>Olvidé mi contraseña</Text>
                             </TouchableOpacity>
@@ -167,8 +165,7 @@ export const LogInScreen = ({ navigation }: Props) => {
                         </View>
                     </View>
                 </View>
-                <Alert visible={isHelp} type='info' icon subtitle='Contacta a tu titular para recuperar tu contraseña' dismissable renderCancel onCancel={(cancel: boolean) => { setIsHelp(!cancel) }} />
-            </View>
+            </Animated.View>
         </TouchableWithoutFeedback>
     )
 }
