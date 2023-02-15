@@ -10,10 +10,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { stylesApp } from '../App';
 import { useMutation } from '@tanstack/react-query';
-import { CheckAuth } from '../api/Api';
 import { HandleContext } from '../context/HandleContext';
 import { setUser } from '../features/appSlice';
 import Animated, { BounceOut, FadeInUp, FlipInEasyY } from 'react-native-reanimated';
+import { AccepTerms } from '../api/Api';
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'TCAP'> { };
 export const TCAPScreen = ({ navigation, route: { params } }: Props) => {
@@ -23,7 +23,7 @@ export const TCAPScreen = ({ navigation, route: { params } }: Props) => {
     const appDispatch = useAppDispatch();
     const { handleError } = useContext(HandleContext);
 
-    const { mutate: mutateTerms } = useMutation(['Terms'], (token: string) => CheckAuth({ terms: token }), {
+    const { mutate: mutateTerms } = useMutation(['Terms'], AccepTerms, {
         retry: 0,
         onError: async err => handleError(String(err)),
         onSuccess: () => {
@@ -58,7 +58,7 @@ export const TCAPScreen = ({ navigation, route: { params } }: Props) => {
                     </ScrollView>
                     <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingTop: 10 }}>
                         {
-                            params?.user && <Button text='Aceptar' mode='contained' contentStyle={{ backgroundColor: colors.success }} onPress={() => mutateTerms(params.user.token)} />
+                            params?.user && <Button text='Aceptar' mode='contained' contentStyle={{ backgroundColor: colors.success }} onPress={() => mutateTerms()} />
                         }
                         <Button text='cancel' mode='contained' contentStyle={{ backgroundColor: colors.danger }} onPress={() => navigation.goBack()} />
                     </View>

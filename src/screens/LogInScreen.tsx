@@ -1,11 +1,11 @@
-import React, { useContext, useEffect, useRef } from 'react';
+import React, { useContext, useRef } from 'react';
 import { Image, KeyboardAvoidingView, StyleSheet, View, TextInput as NativeTextInput, TouchableWithoutFeedback, TouchableOpacity } from 'react-native';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { Input } from '../components/Input/Input';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { Loading } from '../components/Loading';
 import { useMutation } from '@tanstack/react-query';
-import { LogIn } from '../api/Api';
+import { baseURL, LogIn } from '../api/Api';
 import { setUser } from '../features/appSlice';
 import { SocialNetworks } from '../components/SocialNetworks';
 import { Button } from '../components/Button';
@@ -50,11 +50,6 @@ export const LogInScreen = ({ navigation }: Props) => {
     };
 
     const nextInput = useRef<NativeTextInput>(null);
-
-    useEffect(() => {
-        setValue('email', 'jefemonitoreo@pem-sa.com');
-        setValue('password', '123456');
-    }, []);
 
     return (
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
@@ -128,13 +123,19 @@ export const LogInScreen = ({ navigation }: Props) => {
                                 returnKeyType='done'
                                 autoCapitalize='none'
                             />
+                        </KeyboardAvoidingView>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginVertical: 5 }}>
+                            <TouchableOpacity onPress={() => navigation.navigate('PdfScreen', { name: 'Registro', url: `${baseURL}/docs/REGISTRO-PLATAFORMA.pdf` })}
+                                disabled={isLoading} >
+                                <Text variant='titleSmall' style={[{ textAlign: 'center', marginVertical: 15 }]}>Regístrate</Text>
+                            </TouchableOpacity>
                             <TouchableOpacity onPress={() => {
                                 alert({ type: 'info', icon: true, text: 'Contacta a tu titular para recuperar tu contraseña', title: 'Alerta' });
                             }}
                                 disabled={isLoading} >
-                                <Text variant='titleSmall' style={[{ textAlign: 'right', marginVertical: 15 }]}>Olvidé mi contraseña</Text>
+                                <Text variant='titleSmall' style={[{ textAlign: 'center', marginVertical: 15 }]} >Olvidé mi contraseña</Text>
                             </TouchableOpacity>
-                        </KeyboardAvoidingView>
+                        </View>
                         <View style={[
                             (orientation === Orientation.landscape) && {
                                 flex: 1,

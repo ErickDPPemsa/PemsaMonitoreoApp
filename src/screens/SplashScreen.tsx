@@ -18,7 +18,7 @@ export const SplashScreen = ({ navigation }: Props) => {
     const { handleError } = useContext(HandleContext);
     const appDispatch = useAppDispatch();
 
-    const { mutate } = useMutation(['CheckAuth'], (token: string) => CheckAuth({ token }), {
+    const { mutate } = useMutation(['CheckAuth'], CheckAuth, {
         onSuccess: data => appDispatch(setUser(data)),
         onError: err => {
             handleError(String(err));
@@ -57,7 +57,7 @@ export const SplashScreen = ({ navigation }: Props) => {
             if (!token) {
                 start({});
             } else {
-                mutate(token);
+                mutate();
             }
         }).catch(error => toast(String(error)));
     }, []);

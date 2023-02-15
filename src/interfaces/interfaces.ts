@@ -6,20 +6,6 @@ export interface appSlice {
     token?: string;
 };
 
-export interface PropsAlert {
-    open: boolean;
-    icon?: boolean;
-    title?: string;
-    subtitle?: string;
-    msg?: string;
-    timeClose?: number;
-}
-
-export interface Question {
-    confirm?: boolean;
-    dismissable?: boolean;
-}
-
 export interface date {
     date: string;
     day: number;
@@ -109,18 +95,12 @@ export interface Percentajes {
     sinEstado?: percentaje;
 }
 
-export interface responseError {
-    status?: boolean;
-    message?: Array<string>;
-}
-
 export interface GetReport {
     accounts: Array<number>;
     typeAccount: typeAccount;
     dateStart?: string;
     dateEnd?: string;
 }
-
 
 export interface Events {
     FechaOriginal: string;
@@ -147,11 +127,6 @@ export interface Key<T> {
     key: keyof T | Array<keyof T>,
     size?: number,
     center?: boolean
-}
-
-export interface CheckAuthProps {
-    terms?: string,
-    token?: string
 }
 
 export interface useReportProps {

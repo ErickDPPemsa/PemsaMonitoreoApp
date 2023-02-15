@@ -7,12 +7,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CombinedDarkTheme, CombinedLightTheme } from "../config/theme/Theme";
 import Toast from "react-native-toast-message";
 import { EdgeInsets, useSafeAreaInsets } from "react-native-safe-area-context";
-// import { PERMISSIONS, requestMultiple, checkMultiple } from 'react-native-permissions';
 import RNFetchBlob, { FetchBlobResponse } from 'rn-fetch-blob';
 import EncryptedStorage from 'react-native-encrypted-storage';
-import { baseUrl } from "../api/Api";
-// import { baseUrl } from "../api/Api";
-// import { logOut } from '../features/appSlice';
+import { baseURL } from "../api/Api";
 
 interface funcDownload {
     endpoint: string;
@@ -45,27 +42,8 @@ export const HandleProvider = ({ children }: any) => {
         color === 'dark' ? appDispatch(updateTheme(CombinedDarkTheme)) : appDispatch(updateTheme(CombinedLightTheme));
     }, [color]);
 
-    // const androidPermissions = [
-    //     PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE,
-    //     PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE,
-    // ];
-
-
     useEffect(() => {
-        // Platform.OS === 'android' &&
-        //     checkMultiple(androidPermissions)
-        //         .then(result => {
-        //             requestMultiple(androidPermissions)
-        //                 .then(response => {
-        //                     // console.log(response);
-        //                 })
-        //                 .catch(error => {
-        //                     // console.log(error);
-        //                 });
-        //         })
-        //         .catch(error => Alert.alert('Error', String(error)));
 
-        // dispatch({ type: 'setInsets', payload: insets });
         appDispatch(setInsets(insets));
 
         const { width, height } = Dimensions.get('screen');
@@ -88,11 +66,10 @@ export const HandleProvider = ({ children }: any) => {
     }
 
     const downloadReport = async ({ endpoint, tokenTemp, data, fileName }: funcDownload) => {
-        const url = `${baseUrl}/download/${endpoint}`;
+        const url = `${baseURL}/download/${endpoint}`;
         const token = tokenTemp ?? await EncryptedStorage.getItem('token');
         const headers: HeadersInit_ | undefined = {};
         (token) ? Object.assign(headers, { 'Content-type': 'application/json', 'Authorization': `Bearer ${token}` }) : Object.assign(headers, { 'Content-type': 'application/json', });
-        // dispatch({ type: 'updateIsDownload', payload: true });
         const path = (Platform.OS === 'ios' ? RNFetchBlob.fs.dirs.DocumentDir : RNFetchBlob.fs.dirs.DownloadDir)
         const directory = path + '/' + fileName;
 
@@ -125,11 +102,6 @@ export const HandleProvider = ({ children }: any) => {
             .catch(error => {
                 handleError(String(error));
                 Toast.show({ text1: 'Error', text2: String(error), type: 'error' });
-            })
-            .finally(() => {
-                console.log('Terminado');
-
-                // dispatch({ type: 'updateIsDownload', payload: false })
             })
     }
 
