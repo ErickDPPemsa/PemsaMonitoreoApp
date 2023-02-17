@@ -54,10 +54,9 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
 
     useLayoutEffect(() => {
         navigation.setOptions({
-            title: report === 'ap-ci' ? 'APERTURA Y CIERRE' : 'EVENTO DE ALARMA',
+            title: report === 'ap-ci' ? 'Apertura y cierre' : 'Evento de alarma',
             headerLeft: (() =>
                 <IconButton
-                    iconsize={30}
                     style={{ paddingRight: 10 }}
                     name={Platform.OS === 'ios' ? 'chevron-back-outline' : 'arrow-back-outline'}
                     onPress={() => {
@@ -167,13 +166,13 @@ export const ResultAccountScreen = ({ navigation, route: { params: { account, en
                                         : (el[0] === 'Cierres')
                                             ? { name: 'lock-closed-outline', backgroundColor: colors.danger }
                                             : (el[0] === 'APCI')
-                                                ? { name: 'warning-outline', backgroundColor: colors.success }
+                                                ? { name: 'shield-outline', backgroundColor: colors.success }
                                                 : (el[0] === 'Alarma')
-                                                    ? { name: 'server-outline', backgroundColor: colors.danger }
+                                                    ? { name: 'notifications-outline', backgroundColor: colors.danger }
                                                     : (el[0] === 'Pruebas')
-                                                        ? { name: 'settings-outline', backgroundColor: colors.test }
+                                                        ? { name: 'construct-outline', backgroundColor: colors.test }
                                                         : (el[0] === 'Battery')
-                                                            ? { name: 'battery-dead-outline', backgroundColor: colors.warning }
+                                                            ? { name: 'battery-charging-outline', backgroundColor: colors.warning }
                                                             : { name: 'help-circle-outline', backgroundColor: colors.other }
                                 } />
                         )

@@ -58,7 +58,7 @@ export const TCAPScreen = ({ navigation, route: { params } }: Props) => {
                     </ScrollView>
                     <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingTop: 10 }}>
                         {
-                            params?.user && <Button text='Aceptar' mode='contained' contentStyle={{ backgroundColor: colors.success }} onPress={() => mutateTerms()} />
+                            params?.user && <Button text='Aceptar' mode='contained' contentStyle={{ backgroundColor: colors.success }} onPress={() => mutateTerms(params.user.token)} />
                         }
                         <Button text='cancel' mode='contained' contentStyle={{ backgroundColor: colors.danger }} onPress={() => navigation.goBack()} />
                     </View>

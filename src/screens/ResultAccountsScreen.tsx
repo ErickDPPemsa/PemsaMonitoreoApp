@@ -92,10 +92,8 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
     useLayoutEffect(() => {
         navigation.setOptions({
             title: (report === 'ap-ci') ? 'Apertura y cierre' : (report === 'event-alarm') ? 'Evento de alarma' : (report === 'batery') ? 'Problemas de batería' : (report === 'state') ? 'Estado de sucursales' : 'Horario de aperturas y cierres',
-            headerTitleStyle: { ...fonts.titleLarge },
             headerLeft: (() =>
                 <IconButton
-                    iconsize={30}
                     style={{ paddingRight: 10 }}
                     name={Platform.OS === 'ios' ? 'chevron-back-outline' : 'arrow-back-outline'}
                     onPress={() => {
@@ -141,7 +139,8 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
                         },
                     ]}
                 />
-            )
+            ),
+            headerLargeTitle: true,
         });
     }, [navigation, isLoading, isFetching, data]);
 
@@ -387,7 +386,7 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
                                         </>
                                 }
                             </View>
-                            <View key={index + 'button'} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: .2, borderColor: Color(colors.primary).alpha(.2).toString() }}>
+                            {/* <View key={index + 'button'} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: .2, borderColor: Color(colors.primary).alpha(.2).toString() }}>
                                 <Text style={[fonts.titleSmall, { flex: 1 }]}>{ }</Text>
                                 <Button
                                     contentStyle={{ marginVertical: 4 }}
@@ -399,7 +398,7 @@ export const ResultAccountsScreen = ({ navigation, route: { params: { accounts, 
                                         navigation.navigate('ResultAccountScreen', { account: item, start: dates.start.date.date, end: dates.end.date.date, filter: false, keys: getKeys('event-alarm'), typeAccount: 1, report: 'event-alarm' })
                                     }}
                                 />
-                            </View>
+                            </View> */}
                         </>
                 }
             </View>

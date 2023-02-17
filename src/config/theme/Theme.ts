@@ -8,7 +8,7 @@ const whiteTheme: ThemeBase = {
   roundness: 4,
   fonts: typescale,
   colors: {
-    primary: "rgb(43, 92, 176)",
+    primary: "rgb(19, 75, 159)",
     onPrimary: "rgb(255, 255, 255)",
     primaryContainer: "rgb(216, 226, 255)",
     onPrimaryContainer: "rgb(0, 26, 67)",
@@ -57,7 +57,7 @@ const darkTheme: ThemeBase = {
   colors: {
     primary: "rgb(174, 198, 255)",
     onPrimary: "rgb(0, 46, 107)",
-    primaryContainer: "rgb(0, 67, 151)",
+    primaryContainer: "rgb(19, 75, 159)",
     onPrimaryContainer: "rgb(216, 226, 255)",
     secondary: "rgb(191, 198, 220)",
     onSecondary: "rgb(41, 48, 65)",

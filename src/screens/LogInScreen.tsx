@@ -90,6 +90,8 @@ export const LogInScreen = ({ navigation }: Props) => {
                             flex: 1,
                         }
                     ]}>
+                        <Text style={{ textAlign: 'center', }} variant='titleLarge'>Bienvenido</Text>
+                        <Text style={{ textAlign: 'center', color: colors.outline }} variant='titleSmall'>Ingrese sus datos para iniciar sesión</Text>
                         <KeyboardAvoidingView style={[{ paddingVertical: 5 }]}>
                             <Input
                                 editable={!isLoading}

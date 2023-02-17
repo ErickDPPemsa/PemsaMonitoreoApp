@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
-import { useAppSelector } from '../app/hooks';
+import React, { useContext } from 'react';
+import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { LogInScreen } from '../screens/LogInScreen';
 import { IntroductionScreen } from '../screens/IntroductionScreen';
 import { SplashScreen } from '../screens/SplashScreen';
@@ -15,6 +15,12 @@ import { TypeReport, typeAccount } from '../types/types';
 import { ResultAccountsScreen } from '../screens/ResultAccountsScreen';
 import { TableScreen } from '../screens/TableScreen';
 import { PdfScreen } from '../screens/PdfScreen';
+import { CheckAuth } from '../api/Api';
+import { useQuery } from '@tanstack/react-query';
+import { HandleContext } from '../context/HandleContext';
+import { setUser } from '../features/appSlice';
+import { Loading } from '../components/Loading';
+import { is } from 'immer/dist/internal';
 
 export type rootStackScreen = {
     SplashScreen: undefined;
@@ -60,34 +66,48 @@ const Stack = createNativeStackNavigator<rootStackScreen>();
 
 
 export const StackScreens = () => {
-    const { status: isAuth } = useAppSelector((state) => state.app);
+    const { status: isAuth, User } = useAppSelector((state) => state.app);
+    const { handleError } = useContext(HandleContext);
+    const dispath = useAppDispatch();
+
+    const { isFetching } = useQuery(['checkAuth'], () => CheckAuth(), {
+        retry: 0,
+        refetchInterval: 300000,
+        enabled: isAuth,
+        onError: error => handleError(String(error)),
+        onSuccess: (resp) => dispath(setUser(resp))
+    });
+
     return (
-        <Stack.Navigator initialRouteName='SplashScreen'>
-            {
-                isAuth
-                    ?
-                    <Stack.Group key={"Private"}>
-                        <Stack.Screen name='Drawer' component={Drawer} options={{ headerShown: false }} />
-                        <Stack.Screen name='ChangePasswordScreen' component={ChangePasswordScreen} />
-                        <Stack.Screen name='DetailsInfoScreen' component={DetailsInfoScreen} />
-                        <Stack.Screen name='ResultAccountScreen' component={ResultAccountScreen} />
-                        <Stack.Screen name='ResultAccountsScreen' component={ResultAccountsScreen} />
-                        <Stack.Screen name='Search' component={SearchScreen} options={{ animation: 'fade_from_bottom' }} />
-                        <Stack.Screen name='TableScreen' component={TableScreen} />
-                    </Stack.Group>
-                    :
-                    <Stack.Group screenOptions={{ headerShown: false }} key={"Public"}>
-                        <Stack.Screen name='SplashScreen' component={SplashScreen} />
-                        <Stack.Screen name='IntroductionScreen' component={IntroductionScreen} />
-                        <Stack.Screen name='LogInScreen' component={LogInScreen} />
-                    </Stack.Group>
-            }
-            <Stack.Group key={"AllState"}>
-                <Stack.Screen name='PdfScreen' component={PdfScreen} />
-            </Stack.Group>
-            <Stack.Group screenOptions={{ presentation: 'transparentModal' }}>
-                <Stack.Screen name="TCAP" options={{ headerShown: false, }} component={TCAPScreen} />
-            </Stack.Group>
-        </Stack.Navigator>
+        <>
+            <Stack.Navigator initialRouteName='SplashScreen'>
+                {
+                    isAuth
+                        ?
+                        <Stack.Group key={"Private"}>
+                            <Stack.Screen name='Drawer' component={Drawer} options={{ headerShown: false }} />
+                            <Stack.Screen name='ChangePasswordScreen' component={ChangePasswordScreen} />
+                            <Stack.Screen name='DetailsInfoScreen' component={DetailsInfoScreen} />
+                            <Stack.Screen name='ResultAccountScreen' component={ResultAccountScreen} />
+                            <Stack.Screen name='ResultAccountsScreen' component={ResultAccountsScreen} />
+                            <Stack.Screen name='Search' component={SearchScreen} options={{ animation: 'fade_from_bottom' }} />
+                            <Stack.Screen name='TableScreen' component={TableScreen} />
+                        </Stack.Group>
+                        :
+                        <Stack.Group screenOptions={{ headerShown: false }} key={"Public"}>
+                            <Stack.Screen name='SplashScreen' component={SplashScreen} />
+                            <Stack.Screen name='IntroductionScreen' component={IntroductionScreen} />
+                            <Stack.Screen name='LogInScreen' component={LogInScreen} />
+                        </Stack.Group>
+                }
+                <Stack.Group key={"AllState"}>
+                    <Stack.Screen name='PdfScreen' component={PdfScreen} />
+                </Stack.Group>
+                <Stack.Group screenOptions={{ presentation: 'transparentModal' }}>
+                    <Stack.Screen name="TCAP" options={{ headerShown: false, }} component={TCAPScreen} />
+                </Stack.Group>
+            </Stack.Navigator>
+            <Loading refresh={isFetching} />
+        </>
     )
 }

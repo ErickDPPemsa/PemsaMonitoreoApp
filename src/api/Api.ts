@@ -61,8 +61,8 @@ export const CheckAuth = async () => {
         });
 }
 
-export const AccepTerms = async () => {
-    return instance.get('user/accept-terms')
+export const AccepTerms = async (token: string) => {
+    return axios.get('user/accept-terms', { baseURL: baseURL, headers: { Authorization: `Bearer ${token}` } })
         .then(resp => {
             return resp.data as User;
         })

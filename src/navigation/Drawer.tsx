@@ -41,15 +41,14 @@ export const Drawer = (props: Props) => {
         <Menu.Navigator
             drawerContent={props => <MenuContent {...props} />}
             screenOptions={({ navigation, route }) => ({
-                headerLeft: ((props) => <IconButton iconsize={27} style={{ paddingHorizontal: 10 }} name='menu-outline' onPress={() => navigation.dispatch(DrawerActions.openDrawer())} />),
-                // headerRight: (() => <IconButton iconsize={27} style={{ paddingHorizontal: 10 }} name='ellipsis-vertical-circle-outline' onPress={() => props.navigation.navigate('TCAP')} />)
+                headerLeft: ((props) => <IconButton style={{ paddingHorizontal: 10 }} name='menu-outline' onPress={() => navigation.dispatch(DrawerActions.openDrawer())} />),
             })}
         >
-            <Menu.Screen name="HomeScreen" options={{ title: 'INICIO' }} component={HomeScreen} />
+            <Menu.Screen name="HomeScreen" options={{ title: 'Inicio' }} component={HomeScreen} />
             <Menu.Screen name="SelectAccountScreen" options={{ title: 'Individual' }} component={SelectAccountScreen} />
             <Menu.Screen name="SelectGroupsScreen" options={{ title: 'Grupal' }} component={SelectGroupsScreen} />
             <Menu.Screen name="SelectAccountsScreen" options={{ title: 'Avanzado' }} component={SelectAccountsScreen} />
-            <Menu.Screen name="ChangePasswordScreen" options={{ title: 'CAMBIAR CONTRASEÑA' }} component={ChangePasswordScreen} />
+            <Menu.Screen name="ChangePasswordScreen" options={{ title: 'Cambiar contraseña' }} component={ChangePasswordScreen} />
             <Menu.Screen name="DetailsInfoScreen" options={{ title: 'PEMSA monitoreo APP' }} component={DetailsInfoScreen} />
         </Menu.Navigator>
     )
@@ -87,8 +86,8 @@ const RenderItem = (props: PropsItem) => {
                             backgroundColor: Color(colors.primaryContainer).fade(.8).toString()
                         }
                     ]}>
-                        {icon && <Icon style={style.icon} name={icon} size={25} color={colors.onSurface} />}
-                        <Text variant="labelMedium">{label}</Text>
+                        {icon && <Icon style={style.icon} name={icon} size={25} color={colors.outline} />}
+                        <Text variant="labelMedium" style={{ color: colors.outline }}>{label}</Text>
                     </View>
                 )
             }}
@@ -114,7 +113,7 @@ const MenuContent = ({ navigation, state }: DrawerContentComponentProps) => {
             <View style={{ padding: 10, paddingLeft: 0 }}>
                 {
                     User &&
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 10 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', margin: 10, width: '100%' }}>
                         <View style={{ backgroundColor: colors.primary, padding: 10, borderRadius: 100, height: 50, width: 50, justifyContent: 'center' }}>
                             <Text
                                 variant="headlineSmall"
@@ -123,11 +122,12 @@ const MenuContent = ({ navigation, state }: DrawerContentComponentProps) => {
                                         color: colors.background,
                                         textAlign: 'center'
                                     }]}
-                            >{User.fullName.split(' ').map(el => el[0]).join('').slice(0, 2).toUpperCase()}</Text>
+                            >{User.fullName.split(' ').map(el => el[0]).join('').slice(0, 1).toUpperCase()}</Text>
                         </View>
-                        <View style={{ paddingHorizontal: 10 }}>
-                            <Text variant="titleLarge">{User.fullName}</Text>
-                            <Text variant="titleSmall">{User.email}</Text>
+                        <View style={{ paddingHorizontal: 10, flex: 1 }}>
+                            <Text variant='titleMedium'>Hola, <Text variant="titleMedium" style={{ fontWeight: '700' }}>{User.fullName.split(' ').slice(0, 1)}</Text></Text>
+                            <Text variant="titleSmall" style={{ color: colors.outline }}>{User.email}</Text>
+                            <Text variant="titleSmall" style={{ color: colors.outline }}>{User.roles}</Text>
                         </View>
                     </View>
                 }
@@ -157,18 +157,18 @@ const MenuContent = ({ navigation, state }: DrawerContentComponentProps) => {
                     <View style={{ alignItems: 'center', marginVertical: 5, marginBottom: 10 }}>
                         <View style={[styles.containerST, { borderRadius: roundness * 3 }]}>
                             <Pressable
-                                style={[styles.containerOpT, { borderRadius: roundness * 3, borderColor: colors.primaryContainer }, (dark === false) && { backgroundColor: colors.primaryContainer }]}
+                                style={[styles.containerOpT, { borderRadius: roundness * 3, borderColor: colors.primary }, (!dark) && { backgroundColor: colors.primary }]}
                                 onPress={() => dispatch(updateTheme(CombinedLightTheme))}
                             >
-                                <Icon style={[styles.icon]} name="sunny-outline" size={iconSize} color={colors.text} />
-                                <Text style={[fonts.titleSmall, { color: colors.text }]}>Claro</Text>
+                                <Icon style={[styles.icon]} name="sunny-outline" size={iconSize} color={(!dark) ? colors.background : colors.onSurface} />
+                                <Text style={[fonts.titleSmall, (!dark) && { color: colors.background }]}>Claro</Text>
                             </Pressable>
                             <Pressable
-                                style={[styles.containerOpT, { borderRadius: roundness * 3, borderColor: colors.primaryContainer }, (dark) && { backgroundColor: colors.primaryContainer }]}
+                                style={[styles.containerOpT, { borderRadius: roundness * 3, borderColor: colors.primary }, (dark) && { backgroundColor: colors.primary }]}
                                 onPress={() => dispatch(updateTheme(CombinedDarkTheme))}
                             >
-                                <Icon style={[styles.icon]} name="moon-outline" size={iconSize} color={colors.text} />
-                                <Text style={[fonts.titleSmall, { color: colors.text }]}>Oscuro</Text>
+                                <Icon style={[styles.icon]} name="moon-outline" size={iconSize} />
+                                <Text style={[fonts.titleSmall, (dark) && { color: colors.background }]}>Oscuro</Text>
                             </Pressable>
                         </View>
                     </View>

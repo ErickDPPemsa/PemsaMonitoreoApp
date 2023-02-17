@@ -130,10 +130,11 @@ export const Icon = React.forwardRef<View, PropsIcon>(
 interface IconPropsMenu {
     menu?: Array<ButtonProps>;
     disabled?: boolean;
+    iconsize?: number;
 }
 
 export const IconMenu = React.forwardRef<Modal, IconPropsMenu>(
-    ({ disabled, menu }: IconPropsMenu, ref) => {
+    ({ disabled, menu, iconsize }: IconPropsMenu, ref) => {
         const { theme: { colors, dark, roundness }, insets, orientation, screenWidth, screenHeight } = useAppSelector(state => state.app);
 
         const [open, setOpen] = useState<boolean>(false);
@@ -143,6 +144,8 @@ export const IconMenu = React.forwardRef<Modal, IconPropsMenu>(
             width: number;
             height: number;
         }>({ x: 0, y: 0, width: 0, height: 0 });
+        const size: number = 25;
+
 
         const icon = useRef<View>(null);
 
@@ -172,7 +175,7 @@ export const IconMenu = React.forwardRef<Modal, IconPropsMenu>(
             <>
                 <IconButton
                     ref={icon}
-                    iconsize={30}
+                    iconsize={iconsize ?? size}
                     disabled={disabled}
                     name={open ? 'ellipsis-horizontal-circle-outline' : 'ellipsis-vertical-circle-outline'}
                     color={colors.primary}

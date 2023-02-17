@@ -36,9 +36,11 @@ const initialState: appSlice = {
 export const setUser = createAsyncThunk('LogIn', async (User: User) => {
     try {
         await EncryptedStorage.setItem("token", User.token);
+        await EncryptedStorage.setItem("refreshToken", User.refreshToken);
         return User;
     } catch (error) {
         await EncryptedStorage.removeItem("token");
+        await EncryptedStorage.removeItem("refreshToken");
         Toast.show({ text1: 'Error', text2: String(error), type: 'error' });
         return undefined;
     }
@@ -47,6 +49,7 @@ export const setUser = createAsyncThunk('LogIn', async (User: User) => {
 export const logOut = createAsyncThunk('logOut', async () => {
     try {
         await EncryptedStorage.removeItem("token");
+        await EncryptedStorage.removeItem("refreshToken");
     } catch (error) {
         Toast.show({ text1: 'Error', text2: String(error), type: 'error' });
         return undefined;

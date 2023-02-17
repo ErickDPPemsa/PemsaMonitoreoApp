@@ -24,8 +24,8 @@ export const DetailsInfoScreen = ({ navigation, route }: Props) => {
                 source={require('../assets/logo2.png')}
             />
             <View style={{ paddingHorizontal: 25 }}>
-                <Text variant='titleSmall' style={[, { paddingVertical: 10, textAlign: 'center' }]}>Versión: 2928</Text>
-                <Text variant='titleSmall' style={[, { paddingVertical: 10, }]}>© 2021-2032 Protección Electrónica Monterrey S.A. de C.V</Text>
+                <Text variant='titleSmall' style={[, { paddingVertical: 10, textAlign: 'center' }]}>Versión: 2.0.0</Text>
+                <Text variant='titleSmall' style={[, { paddingVertical: 10, }]}>© 2021-2023 Protección Electrónica Monterrey S.A. de C.V</Text>
                 <Text variant='titleSmall' style={[, { paddingVertical: 10, }]}>® Protección Electrónica Monterrey S.A. de C.V</Text>
                 <TouchableOpacity style={{ marginVertical: 15 }} onPress={() => navigation.navigate('TCAP')} >
                     <Text variant='titleMedium' style={{ textAlign: 'center' }}>Términos y condiciones y aviso de privacidad</Text>
