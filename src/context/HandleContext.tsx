@@ -7,7 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CombinedDarkTheme, CombinedLightTheme } from "../config/theme/Theme";
 import Toast from "react-native-toast-message";
 import { EdgeInsets, useSafeAreaInsets } from "react-native-safe-area-context";
-import RNFetchBlob, { FetchBlobResponse } from 'rn-fetch-blob';
+import RNFetchBlob, { FetchBlobResponse } from 'react-native-blob-util';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { baseURL } from "../api/Api";
 
@@ -70,7 +70,7 @@ export const HandleProvider = ({ children }: any) => {
         const token = tokenTemp ?? await EncryptedStorage.getItem('token');
         const headers: HeadersInit_ | undefined = {};
         (token) ? Object.assign(headers, { 'Content-type': 'application/json', 'Authorization': `Bearer ${token}` }) : Object.assign(headers, { 'Content-type': 'application/json', });
-        const path = (Platform.OS === 'ios' ? RNFetchBlob.fs.dirs.DocumentDir : RNFetchBlob.fs.dirs.DownloadDir)
+        const path = (Platform.OS === 'ios' ? RNFetchBlob.fs.dirs.MainBundleDir : RNFetchBlob.fs.dirs.DocumentDir)
         const directory = path + '/' + fileName;
 
         RNFetchBlob
@@ -78,6 +78,8 @@ export const HandleProvider = ({ children }: any) => {
             .then(async (resp: FetchBlobResponse) => {
                 if (resp.type === 'base64') {
                     try {
+                        console.log(directory);
+
                         const exist = await RNFetchBlob.fs.exists(directory);
                         if (exist) {
                             const files = await RNFetchBlob.fs.ls(path);
