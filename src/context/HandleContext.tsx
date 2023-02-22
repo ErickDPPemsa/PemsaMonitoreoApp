@@ -10,6 +10,7 @@ import { EdgeInsets, useSafeAreaInsets } from "react-native-safe-area-context";
 import RNFetchBlob, { FetchBlobResponse } from 'react-native-blob-util';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { baseURL } from "../api/Api";
+import RNFS from 'react-native-fs';
 
 interface funcDownload {
     endpoint: string;
@@ -70,7 +71,7 @@ export const HandleProvider = ({ children }: any) => {
         const token = tokenTemp ?? await EncryptedStorage.getItem('token');
         const headers: HeadersInit_ | undefined = {};
         (token) ? Object.assign(headers, { 'Content-type': 'application/json', 'Authorization': `Bearer ${token}` }) : Object.assign(headers, { 'Content-type': 'application/json', });
-        const path = (Platform.OS === 'ios' ? RNFetchBlob.fs.dirs.MainBundleDir : RNFetchBlob.fs.dirs.DocumentDir)
+        const path = (Platform.OS === 'ios' ? RNFS.DocumentDirectoryPath : RNFS.DownloadDirectoryPath)
         const directory = path + '/' + fileName;
 
         RNFetchBlob
@@ -78,19 +79,27 @@ export const HandleProvider = ({ children }: any) => {
             .then(async (resp: FetchBlobResponse) => {
                 if (resp.type === 'base64') {
                     try {
-                        console.log(directory);
-
-                        const exist = await RNFetchBlob.fs.exists(directory);
+                        const exist = await RNFS.exists(directory);
                         if (exist) {
-                            const files = await RNFetchBlob.fs.ls(path);
-                            const numFiles = files.filter(a => a.includes(fileName.replace('.pdf', ''))).length;
+                            const files = await RNFS.readDir(path);
+                            const numFiles = files.filter(a => a.name.includes(fileName.replace('.pdf', ''))).length;
                             const newFileName = fileName.replace('.pdf', ` ${numFiles}.pdf`);
                             const newDirectory = path + '/' + newFileName;
-                            await RNFetchBlob.fs.createFile(newDirectory, resp.data, 'base64');
-                            Toast.show({ text1: `${newFileName}`, text2: 'Creado existosamente', autoHide: true, visibilityTime: 2000 });
+                            await RNFS.writeFile(newDirectory, resp.data, 'base64')
+                                .then(response => {
+                                    Toast.show({ text1: `${newFileName}`, text2: 'Creado existosamente', autoHide: true, visibilityTime: 2000 });
+                                })
+                                .catch(err => {
+                                    Toast.show({ type: 'error', text1: 'Error', autoHide: true, visibilityTime: 2000 });
+                                });
                         } else {
-                            await RNFetchBlob.fs.createFile(directory, resp.data, 'base64');
-                            Toast.show({ text1: `${fileName}`, text2: 'Creado existosamente', autoHide: true, visibilityTime: 2000 });
+                            await RNFS.writeFile(directory, resp.data, 'base64')
+                                .then(response => {
+                                    Toast.show({ text1: `${fileName}`, text2: 'Creado existosamente' + ' ' + directory, autoHide: true, visibilityTime: 2000 });
+                                })
+                                .catch(err => {
+                                    Toast.show({ type: 'error', text1: 'Error', autoHide: true, visibilityTime: 2000 });
+                                });
                         }
                     } catch (error) {
                         throw (String(error))
