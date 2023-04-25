@@ -8,7 +8,6 @@ import { useAppSelector } from '../app/hooks';
 import { HandleContext } from '../context/HandleContext';
 import { Orientation, UpdateUserProps } from '../interfaces/interfaces';
 import { useMutation } from '@tanstack/react-query';
-import { UpdateUser } from '../api/Api';
 import { Loading } from '../components/Loading';
 
 
@@ -22,7 +21,7 @@ export const ChangePasswordScreen = () => {
     const { control, handleSubmit, reset, setValue, setError } = useForm<ChagePassword>({ defaultValues: { password: '', confirmPassword: '', newPassword: '' } });
     const newPass = useRef<NativeTextInput>(null);
     const confPass = useRef<NativeTextInput>(null);
-    const { handleError } = useContext(HandleContext);
+    const { handleError, UpdateUser } = useContext(HandleContext);
     const { User, orientation } = useAppSelector(state => state.app);
 
     const { isLoading, mutate } = useMutation(['updateUser'], (props: UpdateUserProps) => UpdateUser(props), {

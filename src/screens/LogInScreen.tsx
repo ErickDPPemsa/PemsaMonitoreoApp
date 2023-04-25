@@ -1,11 +1,10 @@
-import React, { useContext, useRef } from 'react';
-import { Image, KeyboardAvoidingView, StyleSheet, View, TextInput as NativeTextInput, TouchableWithoutFeedback, TouchableOpacity } from 'react-native';
+import React, { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Image, KeyboardAvoidingView, StyleSheet, View, TextInput as NativeTextInput, TouchableWithoutFeedback, TouchableOpacity, ScrollView } from 'react-native';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { Input } from '../components/Input/Input';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
 import { Loading } from '../components/Loading';
 import { useMutation } from '@tanstack/react-query';
-import { baseURL, LogIn } from '../api/Api';
 import { setUser } from '../features/appSlice';
 import { SocialNetworks } from '../components/SocialNetworks';
 import { Button } from '../components/Button';
@@ -18,7 +17,14 @@ import { stylesApp } from '../App';
 import Color from 'color';
 import { HandleContext } from '../context/HandleContext';
 import { AlertContext } from '../components/Alert/AlertContext';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, log } from 'react-native-reanimated';
+import TextInput from '../components/Input/TextInput';
+import { AxiosError, AxiosResponse } from 'axios';
+import { CheckBox } from '../components/CheckBox';
+import { statusCheckBox } from '../types/types';
+import EncryptedStorage from 'react-native-encrypted-storage';
+import { Toast } from 'react-native-toast-message/lib/src/Toast';
+
 
 type InputsLogIn = {
     email: string,
@@ -26,18 +32,28 @@ type InputsLogIn = {
 }
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'LogInScreen'> { };
-export const LogInScreen = ({ navigation }: Props) => {
-    const { theme: { dark: isDark, colors, roundness }, orientation } = useAppSelector(store => store.app);
+export const LogInScreen = ({ navigation, route }: Props) => {
+    const { theme: { dark: isDark, colors } } = useAppSelector(store => store.app);
     const backgroundColor: string = isDark ? Color(colors.background).darken(.4).toString() : colors.background;
     const dispatchApp = useAppDispatch();
-    const { control, handleSubmit, reset, setValue, formState } = useForm<InputsLogIn>({ defaultValues: { email: '', password: '' } });
-    const { handleError } = useContext(HandleContext);
+    const { control, handleSubmit, reset, setValue, getValues } = useForm<InputsLogIn>({ defaultValues: { email: '', password: '' } });
+    const { handleError, domain, LogIn } = useContext(HandleContext);
     const { alert } = useContext(AlertContext);
+    const [isChecked, setIsChecked] = useState<statusCheckBox>();
+    const [isGettingData, setIsGettingData] = useState<boolean>(false);
+    const [savedData, setSavedData] = useState<InputsLogIn>();
 
     const { isLoading, mutate } = useMutation(['LogIn'], LogIn, {
         retry: 0,
-        onError: async err => handleError(String(err)),
+        onError: async err => {
+            const Error: AxiosError = err as AxiosError;
+            const Response: AxiosResponse = Error.response as AxiosResponse;
+            handleError(String(Response.data.message));
+        },
         onSuccess: async data => {
+            if (isChecked === 'checked') {
+                await EncryptedStorage.setItem('PrelmoAccountCredentialsSaved', JSON.stringify(getValues()));
+            }
             if (data.termsAndConditions)
                 dispatchApp(setUser(data));
             else
@@ -51,123 +67,158 @@ export const LogInScreen = ({ navigation }: Props) => {
 
     const nextInput = useRef<NativeTextInput>(null);
 
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerShown: true,
+            title: 'Prelmo',
+            headerLeft: (({ canGoBack, label, tintColor }) =>
+                <View style={{ height: '100%', width: 50 }}>
+                    <Image
+                        source={require('../assets/logo4.png')}
+                        style={[
+                            isDark && { tintColor: colors.onSurface },
+                            {
+                                height: '170%',
+                                width: '100%',
+                                resizeMode: 'contain',
+                            }
+                        ]}
+                    />
+                </View>
+            )
+        })
+    }, [navigation, isDark])
+
+    useEffect(() => {
+        setIsGettingData(true);
+        const state = navigation.getState();
+        const routes = state.routes;
+        navigation.reset({
+            ...state,
+            routes: routes.slice(0),
+            index: 0
+        });
+        EncryptedStorage.getItem('PrelmoAccountCredentialsSaved')
+            .then(response => {
+                if (response) {
+                    try {
+                        const { email, password }: InputsLogIn = JSON.parse(response);
+                        setSavedData({ email, password });
+                        setValue('email', email);
+                        // setValue('password', password);
+                    } catch (error) { Toast.show({ text1: 'Error', text2: `${error}` }) }
+                } else {
+                    setSavedData(undefined);
+                }
+            })
+            .catch(err => {
+                Toast.show({ text1: 'Error', text2: `${err}` });
+            })
+            .finally(() => {
+                setIsGettingData(false);
+            })
+    }, []);
+
+
     return (
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-            <Animated.View entering={FadeInUp} style={[style.container, { backgroundColor: colors.background }]}>
-                <Loading refresh={isLoading} />
-                <View style={[
-                    style.auth,
-                    { backgroundColor: backgroundColor, borderRadius: roundness * 4, shadowColor: colors.primary },
-                    (orientation === Orientation.landscape) && {
-                        height: "90%",
-                        width: '80%',
-                        flexDirection: 'row',
-                        alignItems: 'center'
-                    }
-                ]}>
-                    <View style={[
-                        style.logo,
-                        { backgroundColor: backgroundColor, elevation: 2, shadowColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
-                        (orientation === Orientation.landscape) && {
-                            top: 0,
-                            marginBottom: 0,
-                            marginHorizontal: 10
-                        }
-                    ]}>
-                        <Image
-                            source={require('../assets/logo4.png')}
-                            style={[
-                                isDark && { tintColor: colors.onSurface },
-                                {
-                                    height: '80%',
-                                    width: '70%',
-                                }
-                            ]}
-                        />
-                    </View>
-                    <View style={[
-                        (orientation === Orientation.landscape) && {
-                            flex: 1,
-                        }
-                    ]}>
-                        <Text style={{ textAlign: 'center', }} variant='titleLarge'>Bienvenido</Text>
-                        <Text style={{ textAlign: 'center', color: colors.outline }} variant='titleSmall'>Ingrese sus datos para iniciar sesión</Text>
-                        <KeyboardAvoidingView style={[{ paddingVertical: 5 }]}>
-                            <Input
-                                editable={!isLoading}
-                                formInputs={control._defaultValues}
-                                control={control}
-                                name={'email'}
-                                iconLeft='mail'
-                                placeholder='ejemplo@correo.com'
-                                keyboardType='email-address'
-                                rules={{ required: { value: true, message: 'Campo requerido' } }}
-                                label='Correo'
-                                returnKeyType='next'
-                                onSubmitEditing={() => {
-                                    nextInput.current?.focus();
-                                }}
-                                autoCapitalize='none'
-                            />
-                            <Input
-                                editable={!isLoading}
-                                onRef={(nextInput) => { nextInput = nextInput }}
-                                formInputs={control._defaultValues}
-                                control={control}
-                                name={'password'}
-                                iconLeft='lock-closed'
-                                keyboardType='default'
-                                secureTextEntry
-                                placeholder='**********'
-                                rules={{ required: { value: true, message: 'Campo requerido' } }}
-                                label='Contraseña'
-                                onSubmitEditing={handleSubmit(onSubmit)}
-                                returnKeyType='done'
-                                autoCapitalize='none'
-                            />
-                        </KeyboardAvoidingView>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginVertical: 5 }}>
-                            <TouchableOpacity onPress={() => navigation.navigate('PdfScreen', { name: 'Registro', url: `${baseURL}/docs/REGISTRO-PLATAFORMA.pdf` })}
-                                disabled={isLoading} >
-                                <Text variant='titleSmall' style={[{ textAlign: 'center', marginVertical: 15 }]}>Regístrate</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => {
-                                alert({ type: 'info', icon: true, text: 'Contacta a tu titular para recuperar tu contraseña', title: 'Alerta' });
-                            }}
-                                disabled={isLoading} >
-                                <Text variant='titleSmall' style={[{ textAlign: 'center', marginVertical: 15 }]} >Olvidé mi contraseña</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <View style={[
-                            (orientation === Orientation.landscape) && {
-                                flex: 1,
-                                flexDirection: 'row-reverse',
-                                alignItems: 'center',
-                                justifyContent: 'center',
+            <Animated.View
+                entering={FadeInDown.delay(350).duration(400)}
+                style={[style.container, { backgroundColor: colors.background }]}
+            >
+                <Loading refresh={(isLoading || isGettingData)} />
+                <View style={{ justifyContent: 'center' }}>
+                    <View>
+                        <ScrollView>
+                            <Text style={{ textAlign: 'center', marginVertical: 5 }} variant='titleLarge'>Bienvenido</Text>
+                            <Text style={{ textAlign: 'center', color: colors.outline, marginVertical: 5 }} variant='titleSmall'>Ingrese sus datos para iniciar sesión</Text>
+                            <KeyboardAvoidingView style={[{ paddingVertical: 5 }]}>
+                                <TextInput
+                                    iconLeft='server'
+                                    placeholder='exammple.domain.com'
+                                    label='Dirección del Servidor'
+                                    value={domain.replace('https://', '').replace('http://', '').replace('/', '')}
+                                    editable={(domain === '') ? true : false}
+                                    containerStyle={{ marginVertical: 5 }}
+                                    action={<Button
+                                        mode='text'
+                                        text='cambiar'
+                                        variantText='labelSmall'
+                                        labelStyle={{ textTransform: 'capitalize', fontWeight: 'bold' }}
+                                        onPress={(() => navigation.navigate('DomainScreen'))}
+                                    />}
+                                />
+                                <Input
+                                    editable={(!isLoading && !isGettingData)}
+                                    formInputs={control._defaultValues}
+                                    control={control}
+                                    name={'email'}
+                                    iconLeft='mail'
+                                    placeholder='ejemplo@correo.com'
+                                    keyboardType='email-address'
+                                    rules={{ required: { value: true, message: 'Campo requerido' } }}
+                                    label='Correo'
+                                    returnKeyType='next'
+                                    onSubmitEditing={() => {
+                                        nextInput.current?.focus();
+                                    }}
+                                    autoCapitalize='none'
+                                />
+                                <Input
+                                    editable={(!isLoading && !isGettingData)}
+                                    onRef={(nextInput) => { nextInput = nextInput }}
+                                    formInputs={control._defaultValues}
+                                    control={control}
+                                    name={'password'}
+                                    iconLeft='lock-closed'
+                                    keyboardType='default'
+                                    secureTextEntry
+                                    placeholder='**********'
+                                    rules={{ required: { value: true, message: 'Campo requerido' } }}
+                                    label='Contraseña'
+                                    onSubmitEditing={handleSubmit(onSubmit)}
+                                    returnKeyType='done'
+                                    autoCapitalize='none'
+                                />
+                            </KeyboardAvoidingView>
+                            {
+                                !savedData &&
+                                <CheckBox
+                                    text='Recordar contraseña'
+                                    onChange={(props) => setIsChecked(props)}
+                                />
                             }
-                        ]}>
                             <Button
                                 text='Iniciar Sesión'
                                 mode='contained'
                                 onPress={handleSubmit(onSubmit)}
-                                loading={isLoading}
-                                disabled={isLoading}
+                                loading={(isLoading || isGettingData)}
+                                disabled={(isLoading || isGettingData)}
                                 labelStyle={{ paddingVertical: 5, paddingHorizontal: 20 }}
                                 contentStyle={{ marginBottom: 15 }}
                             />
-                            <View style={[
-                                (orientation === Orientation.landscape) && {
-                                    flex: 1,
-                                }
-                            ]}>
-                                <SocialNetworks />
-                                <TouchableOpacity style={{ marginVertical: 15 }} onPress={() => navigation.navigate('TCAP')} disabled={isLoading} >
-                                    <Text variant='titleSmall' style={{ textAlign: 'center' }}>Términos y condiciones y aviso de privacidad</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+                        </ScrollView>
                     </View>
                 </View>
+
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginVertical: 5 }}>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('PdfScreen', { name: 'Registro', url: `${domain}/docs/REGISTRO-PLATAFORMA.pdf` })}
+                        disabled={isLoading} >
+                        <Text variant='titleSmall' style={[{ textAlign: 'center', marginVertical: 10 }]}>Regístrate</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => {
+                        alert({ type: 'info', icon: true, text: 'Contacta a tu titular para recuperar tu contraseña', title: 'Alerta' });
+                    }}
+                        disabled={isLoading} >
+                        <Text variant='titleSmall' style={[{ textAlign: 'center', marginVertical: 10 }]} >Olvidé mi contraseña</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity style={{ marginVertical: 15 }} onPress={() => navigation.navigate('TCAP')} disabled={isLoading} >
+                    <Text variant='titleSmall' style={{ textAlign: 'center' }}>Términos y condiciones y aviso de privacidad</Text>
+                </TouchableOpacity>
+                <SocialNetworks />
             </Animated.View>
         </TouchableWithoutFeedback>
     )
@@ -176,26 +227,9 @@ export const LogInScreen = ({ navigation }: Props) => {
 export const style = StyleSheet.create({
     container: {
         flex: 1,
-        position: 'relative',
-        justifyContent: 'center'
-    },
-    auth: {
-        width: '90%',
-        alignSelf: 'center',
-        paddingHorizontal: 14,
-        paddingBottom: 30,
-        ...stylesApp.shadow,
-        elevation: 5
-    },
-    logo: {
-        width: 130,
-        height: 130,
-        borderRadius: 1000,
-        alignSelf: 'center',
-        top: -65,
-        marginBottom: -65,
-        ...stylesApp.shadow,
-        elevation: 4,
-        shadowRadius: 2
-    },
+        justifyContent: 'center',
+        padding: 15,
+        paddingHorizontal: '10%',
+
+    }
 });

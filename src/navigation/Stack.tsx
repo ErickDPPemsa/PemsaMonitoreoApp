@@ -15,16 +15,13 @@ import { TypeReport, typeAccount } from '../types/types';
 import { ResultAccountsScreen } from '../screens/ResultAccountsScreen';
 import { TableScreen } from '../screens/TableScreen';
 import { PdfScreen } from '../screens/PdfScreen';
-import { CheckAuth } from '../api/Api';
-import { useQuery } from '@tanstack/react-query';
 import { HandleContext } from '../context/HandleContext';
-import { setUser } from '../features/appSlice';
-import { Loading } from '../components/Loading';
-import { is } from 'immer/dist/internal';
+import { DomainScreen } from '../screens/DomainScreen';
 
 export type rootStackScreen = {
     SplashScreen: undefined;
     IntroductionScreen: undefined;
+    DomainScreen: undefined;
     LogInScreen: undefined;
     Drawer: undefined;
     Search: { type: 'Account' | 'Accounts' | 'Groups' };
@@ -67,16 +64,20 @@ const Stack = createNativeStackNavigator<rootStackScreen>();
 
 export const StackScreens = () => {
     const { status: isAuth, User } = useAppSelector((state) => state.app);
-    const { handleError } = useContext(HandleContext);
+    const { handleError, CheckAuth } = useContext(HandleContext);
     const dispath = useAppDispatch();
 
-    const { isFetching } = useQuery(['checkAuth'], () => CheckAuth(), {
-        retry: 0,
-        refetchInterval: 300000,
-        enabled: isAuth,
-        onError: error => handleError(String(error)),
-        onSuccess: (resp) => dispath(setUser(resp))
-    });
+    // const { isFetching } = useQuery(['checkAuth'], () => CheckAuth(), {
+    //     retry: 0,
+    //     refetchInterval: 300000,
+    //     enabled: isAuth,
+    //     onError: async err => {
+    //         const Error: AxiosError = err as AxiosError;
+    //         const Response: AxiosResponse = Error.response as AxiosResponse;
+    //         handleError(String(Response.data.message));
+    //     },
+    //     onSuccess: (resp) => dispath(setUser(resp))
+    // });
 
     return (
         <>
@@ -97,7 +98,8 @@ export const StackScreens = () => {
                         <Stack.Group screenOptions={{ headerShown: false }} key={"Public"}>
                             <Stack.Screen name='SplashScreen' component={SplashScreen} />
                             <Stack.Screen name='IntroductionScreen' component={IntroductionScreen} />
-                            <Stack.Screen name='LogInScreen' component={LogInScreen} />
+                            <Stack.Screen name='DomainScreen' component={DomainScreen} options={{ orientation: 'portrait' }} />
+                            <Stack.Screen name='LogInScreen' component={LogInScreen} options={{ orientation: 'portrait' }} />
                         </Stack.Group>
                 }
                 <Stack.Group key={"AllState"}>
@@ -107,7 +109,7 @@ export const StackScreens = () => {
                     <Stack.Screen name="TCAP" options={{ headerShown: false, }} component={TCAPScreen} />
                 </Stack.Group>
             </Stack.Navigator>
-            <Loading refresh={isFetching} />
+            {/* <Loading refresh={isFetching} /> */}
         </>
     )
 }

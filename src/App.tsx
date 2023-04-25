@@ -57,7 +57,7 @@ export const Root = () => {
                     onChange={resp => resp.includes('PORTRAIT') ? dispatch(setOrientation(Orientation.portrait)) : dispatch(setOrientation(Orientation.landscape))}
                 />
                 <StackScreens />
-                <Toast config={toastConfig} position='bottom' />
+                <Toast config={toastConfig} position='top' />
             </NavigationContainer>
         </GestureHandlerRootView>
     )

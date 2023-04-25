@@ -1,4 +1,4 @@
-import { typeAccount, TypeReport } from "../types/types";
+import { statusCheckBox, typeAccount, TypeReport } from "../types/types";
 
 export interface appSlice {
     status: 'authenticated' | 'not-authenticated';
@@ -144,4 +144,12 @@ export interface dataReport {
     fechas?: string[] | undefined;
     total?: number | undefined;
     percentajes?: Percentajes | undefined;
+}
+
+export interface PropsCheckBox {
+    text: string;
+    disabled?: boolean;
+    onChange?: (state: statusCheckBox) => void;
+    uncheckedColor?: string;
+    color?: string;
 }

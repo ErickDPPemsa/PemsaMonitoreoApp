@@ -92,6 +92,8 @@ export declare type ThemeBase = {
 
 export type filterEvents = "ALL" | "AP" | "CI" | "APCI" | "Alarm" | "Prue" | "Bat" | "otros";
 
+export type statusCheckBox = 'checked' | 'unchecked';
+
 export const AP = ["O", "OS", "US11"];
 export const CI = ["C", "CS", "UR11"];
 export const APCI = ["C", "CS", "O", "OS", "UR11", "US11"];

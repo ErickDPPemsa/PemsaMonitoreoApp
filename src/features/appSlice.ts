@@ -8,6 +8,7 @@ import { Orientation, User, Account, Group } from '../interfaces/interfaces';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import Toast from 'react-native-toast-message';
 import { EdgeInsets } from "react-native-safe-area-context";
+import axios, { AxiosInstance } from "axios";
 
 interface appSlice {
     status: boolean;
@@ -30,7 +31,7 @@ const initialState: appSlice = {
     screenWidth: 0,
     insets: undefined,
     accountsSelected: [],
-    groupsSelected: []
+    groupsSelected: [],
 };
 
 export const setUser = createAsyncThunk('LogIn', async (User: User) => {
@@ -78,7 +79,7 @@ export const appSlice = createSlice({
         },
         updateGroups: (state, action: PayloadAction<Array<Group>>) => {
             state.groupsSelected = action.payload;
-        }
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -98,6 +99,13 @@ export const appSlice = createSlice({
     }
 });
 
-export const { updateTheme, setInsets, setOrientation, setScreen, updateAccounts, updateGroups } = appSlice.actions;
+export const {
+    updateTheme,
+    setInsets,
+    setOrientation,
+    setScreen,
+    updateAccounts,
+    updateGroups,
+} = appSlice.actions;
 export const app = (state: RootState) => state.app;
 export default appSlice.reducer;

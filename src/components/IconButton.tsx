@@ -8,7 +8,7 @@ import { Orientation } from '../interfaces/interfaces';
 import { Platform } from 'react-native';
 import { Button } from './Button';
 import { stylesApp } from '../App';
-import Animated, { FadeInUp, LightSpeedInRight, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { FadeInUp, LightSpeedInRight, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 interface Props extends PressableProps {
     name: string;
@@ -57,14 +57,14 @@ export const IconButton = React.forwardRef<View, Props>(
         }, [name]);
 
         return (
-            <Animated.View style={[animatedStyleIcon]}>
+            <Animated.View style={[]}>
                 <Pressable
                     {...props}
                     ref={ref}
                     onPressIn={(press) => {
                         props.onPressIn && props.onPressIn(press);
                         scale.value = withSequence(
-                            withTiming(1.095, { duration: 10 }),
+                            withTiming(1.2, { duration: 10 }),
                         );
                     }}
                     onPressOut={(press) => {
@@ -84,7 +84,8 @@ export const IconButton = React.forwardRef<View, Props>(
                                     backgroundColor: pressed ? Color(iconProps.color ?? colors.primary).fade(.8).toString() : undefined,
                                     justifyContent: 'center', alignItems: 'center'
                                 },
-                                animatedStyle
+                                animatedStyle,
+                                animatedStyleIcon
                             ]}>
                                 <IconVI {...iconProps} size={iconsize ?? size} color={disabled ? colors.surfaceDisabled : iconProps.color ?? iconColor} />
                             </Animated.View>

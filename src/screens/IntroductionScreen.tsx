@@ -10,10 +10,10 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { rootStackScreen } from '../navigation/Stack';
 import EncryptedStorage from 'react-native-encrypted-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { IconButton } from '../components/IconButton';
-import { stylesApp } from '../App';
 import { AlertContext } from '../components/Alert/AlertContext';
 import { Button } from '../components/Button';
+import Reanimated, { FadeInDown } from 'react-native-reanimated';
+import { HandleContext } from '../context/HandleContext';
 
 type PagerViewOnPageScrollEventData = { position: number; offset: number; }
 
@@ -123,12 +123,13 @@ export const IntroductionScreen = ({ navigation }: Props) => {
     const { theme: { colors, dark }, orientation } = useAppSelector(state => state.app);
     const Pager = useRef<PagerView>(null);
     const { alert, clear } = useContext(AlertContext);
+    const { domain } = useContext(HandleContext);
 
     const omitWellcome = async () => {
         try {
             clear();
             await EncryptedStorage.setItem('isWellcomeOff', 'true');
-            navigation.replace('LogInScreen');
+            (domain === '') ? navigation.replace('DomainScreen') : navigation.replace('LogInScreen');
         } catch (error) { Toast.show({ type: 'error', text1: 'Error', text2: `${error}` }); }
     }
 
@@ -136,7 +137,7 @@ export const IntroductionScreen = ({ navigation }: Props) => {
         try {
             clear();
             await EncryptedStorage.setItem('isWellcomeOff', 'false');
-            navigation.replace('LogInScreen');
+            (domain === '') ? navigation.replace('DomainScreen') : navigation.replace('LogInScreen');
         } catch (error) {
             Toast.show({ type: 'error', text1: 'Error', text2: `${error}` });
         }
@@ -144,7 +145,7 @@ export const IntroductionScreen = ({ navigation }: Props) => {
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
-            <View style={[styles.container]}>
+            <Reanimated.View entering={FadeInDown.duration(500)} style={[styles.container]}>
                 <Image
                     source={require('../assets/logo4.png')}
                     style={[
@@ -185,10 +186,11 @@ export const IntroductionScreen = ({ navigation }: Props) => {
                 </AnimatedPagerView >
                 <Dots positionAnimatedValue={positionAnimatedValue} scrollOffsetAnimatedValue={scrollOffsetAnimatedValue} />
                 <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                    <IconButton name='arrow-forward-outline'
-                        iconsize={37}
-                        color={colors.background}
-                        style={{ backgroundColor: colors.primary, borderRadius: 37, ...stylesApp.shadow, elevation: 5, shadowColor: colors.primary }}
+                    <Button
+                        mode='contained'
+                        text={(page === data.length - 1) ? 'iniciar sesión' : 'siguiente'}
+                        icon='arrow-forward-outline'
+                        isAfterIcon
                         onPress={() => {
                             if (page === data.length - 1) {
                                 alert({
@@ -207,7 +209,7 @@ export const IntroductionScreen = ({ navigation }: Props) => {
                         }}
                     />
                 </View>
-            </View >
+            </Reanimated.View >
         </SafeAreaView>
     );
 }
