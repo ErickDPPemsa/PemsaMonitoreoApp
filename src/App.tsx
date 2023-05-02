@@ -17,6 +17,7 @@ import Text from './components/Text';
 import { setOrientation } from './features/appSlice';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AlertProvider } from './components/Alert/AlertContext';
+import PortalHost from './components/Portal/PortalContext';
 
 export const navigationRef = createNavigationContainerRef();
 
@@ -36,9 +37,11 @@ export const App = () => {
             <StoreProvider store={store}>
                 <AlertProvider>
                     <QueryClientProvider client={queryClient}>
-                        <HandleState>
-                            <Root />
-                        </HandleState>
+                        <PortalHost>
+                            <HandleState>
+                                <Root />
+                            </HandleState>
+                        </PortalHost>
                     </QueryClientProvider>
                 </AlertProvider>
             </StoreProvider>

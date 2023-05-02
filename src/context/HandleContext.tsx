@@ -1,17 +1,18 @@
 import { createContext, useEffect, useReducer } from "react";
-import { ColorSchemeName, Dimensions, Platform, useColorScheme } from "react-native";
-import { Account, BatteryStatus, GetReport, Group, Orientation, Percentajes, UpdateUserProps, User } from '../interfaces/interfaces';
-import { logOut, setInsets, updateTheme, setScreen, setOrientation } from '../features/appSlice';
+import { ColorSchemeName, Platform, useColorScheme } from "react-native";
+import { Account, BatteryStatus, GetReport, Group, Percentajes, UpdateUserProps, User } from '../interfaces/interfaces';
+import { logOut, setInsets, setUser, updateTheme, updateState, updateFE, updateKeychain, updateisCompatible } from '../features/appSlice';
 import { CombinedDarkTheme, CombinedLightTheme } from "../config/theme/Theme";
 import { AP, APCI, Alarm, Bat, CI, Prue, TypeReport, otros } from "../types/types";
 import { EdgeInsets, useSafeAreaInsets } from "react-native-safe-area-context";
 import RNFetchBlob, { FetchBlobResponse } from 'react-native-blob-util';
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
 import { useAppDispatch } from '../app/hooks';
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import EncryptedStorage from 'react-native-encrypted-storage';
 import Toast from "react-native-toast-message";
 import RNFS from 'react-native-fs';
+import keychain from 'react-native-keychain';
 
 interface funcDownload {
     endpoint: string;
@@ -72,8 +73,8 @@ const Reducer = (state: State, action: Action): State => {
         case 'updateInstance': return { ...state, instance: action.payload }
         default: return state;
     }
-
 }
+
 export const HandleProvider = ({ children }: any) => {
     const [state, dispatch] = useReducer(Reducer, initialState);
     const appDispatch = useAppDispatch();
@@ -81,36 +82,34 @@ export const HandleProvider = ({ children }: any) => {
     const color: ColorSchemeName = useColorScheme();
     const insets: EdgeInsets = useSafeAreaInsets();
 
-    state.instance.interceptors.request.use(
-        async (config) => {
-            config.headers.Authorization = `Bearer ${await getToken()}`;
-            return config;
-        },
-        (error) => Promise.reject(error),
-    );
+    const setConfig = async () => {
+        try {
+            const isCompatible = await keychain.getSupportedBiometryType();
+            appDispatch(updateisCompatible(isCompatible));
 
-    useEffect(() => {
-        color === 'dark' ? appDispatch(updateTheme(CombinedDarkTheme)) : appDispatch(updateTheme(CombinedLightTheme));
-    }, [color]);
+            const data = await keychain.getAllGenericPasswordServices();
+            console.log(data);
 
-    useEffect(() => {
-        appDispatch(setInsets(insets));
-        getDomain();
-    }, []);
+            if (data.find(f => f.includes('LogIn_DEVICE_PASSCODE'))) appDispatch(updateKeychain('DEVICE_PASSCODE'));
+            if (data.find(f => f.includes('LogIn_BIOMETRY'))) appDispatch(updateKeychain('BIOMETRY'));
 
-    useEffect(() => {
-        if (state.domain !== '') {
-            dispatch({
-                type: 'updateInstance', payload: axios.create({
-                    baseURL: state.domain
-                })
-            })
+            const domain: string = await EncryptedStorage.getItem('domainServerPrelmo') ?? '';
+            dispatch({ type: 'updateDomain', payload: domain });
+
+            if (domain !== '') {
+                dispatch({
+                    type: 'updateInstance', payload: axios.create({
+                        baseURL: domain
+                    })
+                });
+                autoLogIn();
+            }
+            else {
+                appDispatch(updateState('unlogued'));
+            }
+        } catch (error) {
+            handleError(`${error}`);
         }
-    }, [state.domain]);
-
-    const getDomain = async () => {
-        const domain: string = await EncryptedStorage.getItem('domainServerPrelmo') ?? '';
-        dispatch({ type: 'updateDomain', payload: domain });
     }
 
     const getToken = async () => {
@@ -138,6 +137,18 @@ export const HandleProvider = ({ children }: any) => {
             queryClient.clear();
             await appDispatch(logOut());
         }
+    }
+
+    const autoLogIn = async () => {
+        await EncryptedStorage.getItem('token')
+            .then(async token => {
+                if (!token) {
+                    appDispatch(updateState('unlogued'));
+                } else {
+                    mutate();
+                }
+            })
+            .catch(error => console.log(error));//Gestionar errores con el componente Alert...Implementar el Portal
     }
 
     const downloadReport = async ({ endpoint, tokenTemp, data, fileName }: funcDownload) => {
@@ -194,6 +205,11 @@ export const HandleProvider = ({ children }: any) => {
         try {
             await EncryptedStorage.setItem('domainServerPrelmo', domain);
             dispatch({ type: 'updateDomain', payload: domain });
+            dispatch({
+                type: 'updateInstance', payload: axios.create({
+                    baseURL: domain
+                })
+            });
         } catch (error) {
             handleError(`${error}`);
         }
@@ -205,8 +221,6 @@ export const HandleProvider = ({ children }: any) => {
     }
 
     const CheckAuth = async () => {
-        console.log(state.domain);
-
         const response = await state.instance.get('auth/check-auth');
         return response.data as User;
     }
@@ -429,6 +443,37 @@ export const HandleProvider = ({ children }: any) => {
         const response = await state.instance.patch(`user/update/${id}`, props);
         return response.data as User;
     };
+
+    const { mutate } = useMutation(['CheckAuth'], CheckAuth, {
+        onSuccess: data => {
+            appDispatch(updateFE(false));
+            appDispatch(setUser(data))
+        },
+        onError: err => {
+            const Error: AxiosError = err as AxiosError;
+            const Response: AxiosResponse = Error.response as AxiosResponse;
+            handleError(String(Response.data.message));
+            appDispatch(updateState('unlogued'));
+        }
+    })
+
+    state.instance.interceptors.request.use(
+        async (config) => {
+            config.headers.Authorization = `Bearer ${await getToken()}`;
+            return config;
+        },
+        (error) => Promise.reject(error),
+    );
+
+    useEffect(() => {
+        color === 'dark' ? appDispatch(updateTheme(CombinedDarkTheme)) : appDispatch(updateTheme(CombinedLightTheme));
+    }, [color]);
+
+    useEffect(() => {
+        appDispatch(updateState('checking'));
+        appDispatch(setInsets(insets));
+        setConfig();
+    }, []);
 
     return (
         <HandleContext.Provider

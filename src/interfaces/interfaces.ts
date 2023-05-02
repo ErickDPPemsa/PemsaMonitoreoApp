@@ -1,9 +1,24 @@
-import { statusCheckBox, typeAccount, TypeReport } from "../types/types";
+import { GestureResponderEvent, StatusBarProps } from "react-native";
+import { KeychainType, statusApp, statusCheckBox, ThemeBase, typeAccount, TypeReport } from "../types/types";
+import { Theme } from "@react-navigation/native";
+import { EdgeInsets } from "react-native-safe-area-context";
+import keychain from 'react-native-keychain';
 
-export interface appSlice {
-    status: 'authenticated' | 'not-authenticated';
-    versionApp: string;
-    token?: string;
+export interface AppSlice {
+    status: statusApp;
+    firstEntry: boolean;
+    isCompatible: keychain.BIOMETRY_TYPE | null;
+    isSave: boolean;
+    isSaveWithBiometry: boolean;
+    keychain: KeychainType;
+    theme: ThemeBase & Theme;
+    User?: User;
+    orientation: Orientation;
+    screenHeight: number;
+    screenWidth: number;
+    insets?: EdgeInsets;
+    accountsSelected: Array<Account>;
+    groupsSelected: Array<Group>;
 };
 
 export interface date {
@@ -148,8 +163,9 @@ export interface dataReport {
 
 export interface PropsCheckBox {
     text: string;
+    isChecked: statusCheckBox;
     disabled?: boolean;
-    onChange?: (state: statusCheckBox) => void;
+    onPress?: ((event: GestureResponderEvent) => void) | null;
     uncheckedColor?: string;
     color?: string;
 }

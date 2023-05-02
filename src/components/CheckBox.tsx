@@ -1,23 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { statusCheckBox } from '../types/types';
 import { useAppSelector } from '../app/hooks';
 import { PropsCheckBox } from '../interfaces/interfaces';
 import { IconButton } from './IconButton';
 import Color from 'color';
 import Text from './Text';
 
-export const CheckBox = ({ color, disabled, uncheckedColor, onChange, text }: PropsCheckBox) => {
-    const [isChecked, setIsChecked] = useState<statusCheckBox>('unchecked');
+export const CheckBox = ({ color, disabled, uncheckedColor, text, onPress, isChecked }: PropsCheckBox) => {
     const { theme: { colors } } = useAppSelector(state => state.app);
-
-    useEffect(() => {
-        onChange && onChange(isChecked);
-    }, [isChecked]);
 
     return (
         <Pressable
-            onPress={() => setIsChecked((isChecked === 'checked') ? 'unchecked' : 'checked')}
+            onPress={onPress}
             android_ripple={{ color: Color(colors.primary).fade(.9).toString() }}
             style={{ marginVertical: 5 }}
         >
@@ -30,7 +24,7 @@ export const CheckBox = ({ color, disabled, uncheckedColor, onChange, text }: Pr
                         <IconButton
                             style={{ marginHorizontal: 5 }}
                             name={(isChecked === 'checked') ? 'checkbox' : 'stop-outline'}
-                            onPress={() => (isChecked === 'checked') ? setIsChecked('unchecked') : setIsChecked('checked')}
+                            onPress={onPress}
                         />
                         <Text>{text}</Text>
                     </View>

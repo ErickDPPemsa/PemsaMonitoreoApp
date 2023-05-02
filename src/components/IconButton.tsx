@@ -24,22 +24,24 @@ export const IconButton = React.forwardRef<View, Props>(
         const size: number = 25;
         const iconColor: string = dark ? colors.primary : Color(colors.primary).darken(.3).toString();
         const rotation = useSharedValue(0);
+        const scale = useSharedValue(1);
 
         const animatedStyle = useAnimatedStyle(() => {
             return {
-                transform: [{ rotateZ: `${rotation.value}deg` }],
+                transform: [
+                    { rotateZ: `${rotation.value}deg` }
+                ],
             };
         });
 
         const start = () => {
             rotation.value = withSequence(
-                withTiming(-10, { duration: 50 }),
-                withRepeat(withTiming(10, { duration: 100 }), 6, true),
+                withTiming(-5, { duration: 50 }),
+                withRepeat(withTiming(5, { duration: 100 }), 6, true),
                 withTiming(0, { duration: 50 })
             );
         }
 
-        const scale = useSharedValue(1);
 
         const animatedStyleIcon = useAnimatedStyle(() => {
             return {
@@ -57,41 +59,40 @@ export const IconButton = React.forwardRef<View, Props>(
         }, [name]);
 
         return (
-            <Animated.View style={[]}>
-                <Pressable
-                    {...props}
-                    ref={ref}
-                    onPressIn={(press) => {
-                        props.onPressIn && props.onPressIn(press);
-                        scale.value = withSequence(
-                            withTiming(1.2, { duration: 10 }),
-                        );
-                    }}
-                    onPressOut={(press) => {
-                        props.onPressOut && props.onPressOut(press);
-                        scale.value = withSequence(
-                            withTiming(1, { duration: 10 }),
-                        );
-                    }}
-                >
-                    {
-                        ({ pressed }) =>
-                            <Animated.View style={[
-                                {
-                                    width: (iconsize ?? size) + 5,
-                                    height: (iconsize ?? size) + 5,
-                                    borderRadius: (iconsize ?? size) * 2,
-                                    backgroundColor: pressed ? Color(iconProps.color ?? colors.primary).fade(.8).toString() : undefined,
-                                    justifyContent: 'center', alignItems: 'center'
-                                },
-                                animatedStyle,
-                                animatedStyleIcon
-                            ]}>
-                                <IconVI {...iconProps} size={iconsize ?? size} color={disabled ? colors.surfaceDisabled : iconProps.color ?? iconColor} />
-                            </Animated.View>
-                    }
-                </Pressable >
-            </Animated.View>
+            <Pressable
+                {...props}
+                ref={ref}
+                onPressIn={(press) => {
+                    props.onPressIn && props.onPressIn(press);
+                    scale.value = withSequence(
+                        withTiming(1.2, { duration: 10 }),
+                    );
+                }}
+                onPressOut={(press) => {
+                    props.onPressOut && props.onPressOut(press);
+                    scale.value = withSequence(
+                        withTiming(1, { duration: 10 }),
+                    );
+                }}
+                android_ripple={{ color: Color(colors.primary).fade(.9).toString(), borderless: true }}
+            >
+                {
+                    ({ pressed }) =>
+                        <Animated.View style={[
+                            {
+                                width: (iconsize ?? size) + 5,
+                                height: (iconsize ?? size) + 5,
+                                borderRadius: (iconsize ?? size) * 2,
+                                justifyContent: 'center', alignItems: 'center'
+                            },
+                            animatedStyle,
+                            animatedStyleIcon,
+                            pressed && Platform.OS === 'ios' && { backgroundColor: pressed ? Color(iconProps.color ?? colors.primary).fade(.8).toString() : undefined, },
+                        ]}>
+                            <IconVI {...iconProps} size={iconsize ?? size} color={disabled ? colors.surfaceDisabled : iconProps.color ?? iconColor} />
+                        </Animated.View>
+                }
+            </Pressable >
         )
     }
 );

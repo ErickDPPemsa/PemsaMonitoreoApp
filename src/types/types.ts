@@ -1,5 +1,7 @@
 import { Events } from "../interfaces/interfaces";
 
+export type KeychainType = 'BIOMETRY' | 'DEVICE_PASSCODE' | null;
+export type statusApp = 'checking' | 'unlogued' | 'logued';
 export type TypeReport = 'ap-ci' | 'event-alarm' | 'batery' | 'state' | 'apci-week';
 export type typeAccount = number;
 export type HeaderTableValues = Array<{ title: string, keys?: Array<keyof Events>, size?: number, center?: boolean }>;

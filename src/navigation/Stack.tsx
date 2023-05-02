@@ -81,9 +81,9 @@ export const StackScreens = () => {
 
     return (
         <>
-            <Stack.Navigator initialRouteName='SplashScreen'>
+            <Stack.Navigator>
                 {
-                    isAuth
+                    (isAuth === 'logued')
                         ?
                         <Stack.Group key={"Private"}>
                             <Stack.Screen name='Drawer' component={Drawer} options={{ headerShown: false }} />
