@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Image, KeyboardAvoidingView, StyleSheet, View, TextInput as NativeTextInput, TouchableWithoutFeedback, TouchableOpacity, ScrollView, Modal, Alert } from 'react-native';
+import { Image, KeyboardAvoidingView, StyleSheet, View, TextInput as NativeTextInput, TouchableWithoutFeedback, TouchableOpacity, ScrollView, Modal, Alert, Platform } from 'react-native';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { Input } from '../components/Input/Input';
 import { useAppDispatch, useAppSelector } from '../app/hooks';
@@ -30,12 +30,12 @@ type InputsLogIn = {
 
 interface Props extends NativeStackScreenProps<rootStackScreen, 'LogInScreen'> { };
 export const LogInScreen = ({ navigation, route }: Props) => {
-    const { theme: { dark: isDark, colors }, firstEntry, isCompatible, isSave, keychain: StateKeychain, isSaveWithBiometry } = useAppSelector(store => store.app);
+    const { theme: { dark: isDark, colors }, firstEntry, isCompatible, isSave, keychain: StateKeychain, isSaveWithBiometry, insets } = useAppSelector(store => store.app);
     const backgroundColor: string = isDark ? Color(colors.background).darken(.4).toString() : colors.background;
     const dispatchApp = useAppDispatch();
     const { control, handleSubmit, reset, setValue, getValues } = useForm<InputsLogIn>({ defaultValues: { email: '', password: '' } });
     const { handleError, domain, LogIn } = useContext(HandleContext);
-    const { alert } = useContext(AlertContext);
+    const { alert, type } = useContext(AlertContext);
     const [getted, setGetted] = useState<InputsLogIn>();
     const [isChanged, setIsChanged] = useState<boolean>(false);
 
@@ -108,6 +108,7 @@ export const LogInScreen = ({ navigation, route }: Props) => {
             await Keychain.resetGenericPassword({ service: 'LogIn_DEVICE_PASSCODE' });
             dispatchApp(updateKeychain(null));
             setGetted(undefined);
+            reset();
         } catch (error) { handleError(`${error}`) }
     }
 
@@ -165,26 +166,48 @@ export const LogInScreen = ({ navigation, route }: Props) => {
     }
 
     useLayoutEffect(() => {
-        navigation.setOptions({
-            headerShown: true,
-            title: 'Prelmo',
-            headerLeft: (({ canGoBack, label, tintColor }) =>
-                <View style={{ height: '100%', width: 50 }}>
-                    <Image
-                        source={require('../assets/logo4.png')}
-                        style={[
-                            isDark && { tintColor: colors.onSurface },
-                            {
-                                height: '170%',
-                                width: '100%',
-                                resizeMode: 'contain',
-                            }
-                        ]}
-                    />
-                </View>
-            )
-        })
-    }, [navigation, isDark])
+        Platform.OS === 'ios'
+            ?
+            navigation.setOptions({
+                headerShown: true,
+                title: '',
+                headerLeft: (({ canGoBack, label, tintColor }) =>
+                    <View style={{ height: (insets?.top), width: 50 }}>
+                        <Image
+                            source={require('../assets/prelmo2.png')}
+                            style={[
+                                isDark && { tintColor: colors.onSurface },
+                                {
+                                    height: '100%',
+                                    width: '100%',
+                                    resizeMode: 'contain',
+                                }
+                            ]}
+                        />
+                    </View>
+                )
+            })
+            :
+            navigation.setOptions({
+                headerShown: true,
+                title: '',
+                headerLeft: (({ canGoBack, label, tintColor }) =>
+                    <View style={{ height: '100%', width: 50 }}>
+                        <Image
+                            source={require('../assets/prelmo2.png')}
+                            style={[
+                                isDark && { tintColor: colors.onSurface },
+                                {
+                                    height: '170%',
+                                    width: '100%',
+                                    resizeMode: 'contain',
+                                }
+                            ]}
+                        />
+                    </View>
+                )
+            })
+    }, [navigation, isDark, insets])
 
     useEffect(() => {
         const state = navigation.getState();
@@ -202,7 +225,7 @@ export const LogInScreen = ({ navigation, route }: Props) => {
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
             <Animated.View
                 entering={FadeInDown.delay(350).duration(400)}
-                style={[style.container, { backgroundColor: colors.background }]}
+                style={[style.container, { backgroundColor }]}
             >
                 <Loading refresh={(isLoading)} />
                 <View style={{ justifyContent: 'center' }}>
@@ -310,10 +333,12 @@ export const LogInScreen = ({ navigation, route }: Props) => {
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity style={{ marginVertical: 15 }} onPress={() => navigation.navigate('TCAP')} disabled={isLoading} >
+                {/* <TouchableOpacity style={{ marginVertical: 15 }} onPress={() => navigation.navigate('TCAP')} disabled={isLoading} >
                     <Text variant='titleSmall' style={{ textAlign: 'center' }}>Términos y condiciones y aviso de privacidad</Text>
-                </TouchableOpacity>
-                <SocialNetworks />
+                </TouchableOpacity> */}
+                <View style={{ marginVertical: 10 }}>
+                    <SocialNetworks />
+                </View>
             </Animated.View>
         </TouchableWithoutFeedback>
     )

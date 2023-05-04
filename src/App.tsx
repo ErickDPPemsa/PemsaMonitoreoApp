@@ -11,7 +11,6 @@ import { StackScreens } from './navigation/Stack';
 import { StyleSheet, View } from 'react-native';
 import { OrientationLocker } from 'react-native-orientation-locker';
 import { Orientation } from './interfaces/interfaces';
-import Toast, { BaseToastProps } from 'react-native-toast-message';
 import Color from 'color';
 import Text from './components/Text';
 import { setOrientation } from './features/appSlice';
@@ -35,15 +34,15 @@ export const App = () => {
     return (
         <SafeAreaProvider initialMetrics={initialWindowMetrics}>
             <StoreProvider store={store}>
-                <AlertProvider>
-                    <QueryClientProvider client={queryClient}>
-                        <PortalHost>
+                <PortalHost>
+                    <AlertProvider>
+                        <QueryClientProvider client={queryClient}>
                             <HandleState>
                                 <Root />
                             </HandleState>
-                        </PortalHost>
-                    </QueryClientProvider>
-                </AlertProvider>
+                        </QueryClientProvider>
+                    </AlertProvider>
+                </PortalHost>
             </StoreProvider>
         </SafeAreaProvider >
     )
@@ -60,79 +59,9 @@ export const Root = () => {
                     onChange={resp => resp.includes('PORTRAIT') ? dispatch(setOrientation(Orientation.portrait)) : dispatch(setOrientation(Orientation.landscape))}
                 />
                 <StackScreens />
-                <Toast config={toastConfig} position='top' />
             </NavigationContainer>
         </GestureHandlerRootView>
     )
-}
-
-export const toastConfig = {
-    success: ({ text1, text2 }: BaseToastProps) => {
-        const { colors, dark, roundness } = useAppSelector(state => state.app.theme);
-        return (
-            <View style={[
-                stylesApp.shadow,
-                {
-                    borderLeftWidth: 5,
-                    borderLeftColor: colors.success,
-                    backgroundColor: dark ? Color(colors.background).darken(.4).toString() : colors.background,
-                    shadowColor: colors.success,
-                    elevation: 2,
-                    padding: 10,
-                    paddingVertical: 15,
-                    width: '90%',
-                    borderRadius: roundness * 2,
-                }
-            ]}>
-                {text1 && <Text variant='bodyLarge' style={[{ fontWeight: 'bold' }]}>{text1}</Text>}
-                {text2 && <Text variant='bodyMedium' >{text2}</Text>}
-            </View>
-        )
-    },
-    error: ({ text1, text2 }: BaseToastProps) => {
-        const { colors, dark, roundness } = useAppSelector(state => state.app.theme);
-        return (
-            <View style={[
-                stylesApp.shadow,
-                {
-                    borderLeftWidth: 5,
-                    borderLeftColor: colors.danger,
-                    backgroundColor: dark ? Color(colors.background).darken(.4).toString() : colors.background,
-                    shadowColor: colors.danger,
-                    elevation: 2,
-                    padding: 10,
-                    paddingVertical: 15,
-                    width: '90%',
-                    borderRadius: roundness * 2,
-                }
-            ]}>
-                {text1 && <Text variant='bodyLarge' style={[{ fontWeight: 'bold' }]}>{text1}</Text>}
-                {text2 && <Text variant='bodyMedium' >{text2}</Text>}
-            </View>
-        )
-    },
-    info: ({ text1, text2 }: BaseToastProps) => {
-        const { colors, dark, roundness } = useAppSelector(state => state.app.theme);
-        return (
-            <View style={[
-                stylesApp.shadow,
-                {
-                    borderLeftWidth: 5,
-                    borderLeftColor: colors.info,
-                    backgroundColor: dark ? Color(colors.background).darken(.4).toString() : colors.background,
-                    shadowColor: colors.info,
-                    elevation: 2,
-                    padding: 10,
-                    paddingVertical: 15,
-                    width: '90%',
-                    borderRadius: roundness * 2,
-                }
-            ]}>
-                {text1 && <Text variant='bodyLarge' style={[{ fontWeight: 'bold' }]}>{text1}</Text>}
-                {text2 && <Text variant='bodyMedium' >{text2}</Text>}
-            </View>
-        )
-    }
 }
 
 export const stylesApp = StyleSheet.create({

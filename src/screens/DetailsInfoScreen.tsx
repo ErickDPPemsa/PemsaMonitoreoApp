@@ -21,7 +21,7 @@ export const DetailsInfoScreen = ({ navigation, route }: Props) => {
                     },
                     dark && { tintColor: colors.onSurface }
                 ]}
-                source={require('../assets/logo2.png')}
+                source={require('../assets/prelmo.png')}
             />
             <View style={{ paddingHorizontal: 25 }}>
                 <Text variant='titleSmall' style={[, { paddingVertical: 10, textAlign: 'center' }]}>Versión: 2.0.0</Text>

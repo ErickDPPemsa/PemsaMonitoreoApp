@@ -1,4 +1,4 @@
-import { createContext, useEffect, useReducer } from "react";
+import { createContext, useContext, useEffect, useReducer } from "react";
 import { ColorSchemeName, Platform, useColorScheme } from "react-native";
 import { Account, BatteryStatus, GetReport, Group, Percentajes, UpdateUserProps, User } from '../interfaces/interfaces';
 import { logOut, setInsets, setUser, updateTheme, updateState, updateFE, updateKeychain, updateisCompatible } from '../features/appSlice';
@@ -10,9 +10,9 @@ import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
 import { useAppDispatch } from '../app/hooks';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import EncryptedStorage from 'react-native-encrypted-storage';
-import Toast from "react-native-toast-message";
 import RNFS from 'react-native-fs';
 import keychain from 'react-native-keychain';
+import { AlertContext } from "../components/Alert/AlertContext";
 
 interface funcDownload {
     endpoint: string;
@@ -81,6 +81,7 @@ export const HandleProvider = ({ children }: any) => {
     const queryClient = useQueryClient();
     const color: ColorSchemeName = useColorScheme();
     const insets: EdgeInsets = useSafeAreaInsets();
+    const { notification } = useContext(AlertContext);
 
     const setConfig = async () => {
         try {
@@ -132,7 +133,13 @@ export const HandleProvider = ({ children }: any) => {
     }
 
     const handleError = async (error: string) => {
-        Toast.show({ type: 'error', text1: 'Error', text2: error });
+        notification({
+            type: 'error',
+            title: 'Error',
+            text: error,
+            autoClose: true
+        });
+
         if (error.includes('La sesión expiro, inicie sesión nuevamente') || (error.includes('Unauthorized') || error.includes('unauthorized'))) {
             queryClient.clear();
             await appDispatch(logOut());
@@ -172,18 +179,42 @@ export const HandleProvider = ({ children }: any) => {
                             const newDirectory = path + '/' + newFileName;
                             await RNFS.writeFile(newDirectory, resp.data, 'base64')
                                 .then(response => {
-                                    Toast.show({ text1: `${newFileName}`, text2: 'Creado existosamente', autoHide: true, visibilityTime: 2000 });
+                                    notification({
+                                        type: 'success',
+                                        title: `${newFileName}`,
+                                        subtitle: 'Creado existosamente',
+                                        autoClose: true,
+                                        timeOut: 2000,
+                                    });
                                 })
                                 .catch(err => {
-                                    Toast.show({ type: 'error', text1: 'Error', autoHide: true, visibilityTime: 2000 });
+                                    notification({
+                                        type: 'error',
+                                        title: `Error`,
+                                        text: `${err}`,
+                                        autoClose: true,
+                                        timeOut: 2000,
+                                    });
                                 });
                         } else {
                             await RNFS.writeFile(directory, resp.data, 'base64')
                                 .then(response => {
-                                    Toast.show({ text1: `${fileName}`, text2: 'Creado existosamente' + ' ' + directory, autoHide: true, visibilityTime: 2000 });
+                                    notification({
+                                        type: 'success',
+                                        title: `${fileName}`,
+                                        subtitle: `Creado existosamente  ${directory}`,
+                                        autoClose: true,
+                                        timeOut: 2000,
+                                    });
                                 })
                                 .catch(err => {
-                                    Toast.show({ type: 'error', text1: 'Error', autoHide: true, visibilityTime: 2000 });
+                                    notification({
+                                        type: 'error',
+                                        title: `Error`,
+                                        text: `${err}`,
+                                        autoClose: true,
+                                        timeOut: 2000,
+                                    });
                                 });
                         }
                     } catch (error) {
@@ -197,7 +228,13 @@ export const HandleProvider = ({ children }: any) => {
             })
             .catch(error => {
                 handleError(String(error));
-                Toast.show({ text1: 'Error', text2: String(error), type: 'error' });
+                notification({
+                    type: 'error',
+                    title: `Error`,
+                    text: `${error}`,
+                    autoClose: true,
+                    timeOut: 2000,
+                });
             })
     }
 

@@ -108,7 +108,6 @@ export const SelectGroupsScreen = ({ navigation, route }: Props) => {
                         <>
                             <Select
                                 maxHeight={200}
-                                animationType='fade'
                                 valueField='value'
                                 labelField='name'
                                 value={value}

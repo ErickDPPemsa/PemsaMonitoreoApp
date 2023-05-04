@@ -6,9 +6,7 @@ import { KeychainType, ThemeBase, statusApp } from "../types/types";
 import { Theme } from "@react-navigation/native";
 import { Orientation, User, Account, Group, AppSlice } from '../interfaces/interfaces';
 import EncryptedStorage from 'react-native-encrypted-storage';
-import Toast from 'react-native-toast-message';
 import { EdgeInsets } from "react-native-safe-area-context";
-import { stat } from "react-native-fs";
 import keychain from 'react-native-keychain';
 
 const initialState: AppSlice = {
@@ -36,7 +34,6 @@ export const setUser = createAsyncThunk('LogIn', async (User: User) => {
     } catch (error) {
         await EncryptedStorage.removeItem("token");
         await EncryptedStorage.removeItem("refreshToken");
-        Toast.show({ text1: 'Error', text2: String(error), type: 'error' });
         return undefined;
     }
 });
@@ -46,7 +43,6 @@ export const logOut = createAsyncThunk('logOut', async () => {
         await EncryptedStorage.removeItem("token");
         await EncryptedStorage.removeItem("refreshToken");
     } catch (error) {
-        Toast.show({ text1: 'Error', text2: String(error), type: 'error' });
         return undefined;
     }
 });

@@ -1,7 +1,6 @@
 import React, { useContext, useRef } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { KeyboardAvoidingView, View, TextInput as NativeTextInput } from 'react-native';
-import Toast from 'react-native-toast-message';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input/Input';
 import { useAppSelector } from '../app/hooks';
@@ -9,6 +8,7 @@ import { HandleContext } from '../context/HandleContext';
 import { Orientation, UpdateUserProps } from '../interfaces/interfaces';
 import { useMutation } from '@tanstack/react-query';
 import { Loading } from '../components/Loading';
+import { AlertContext } from '../components/Alert/AlertContext';
 
 
 type ChagePassword = {
@@ -22,6 +22,7 @@ export const ChangePasswordScreen = () => {
     const newPass = useRef<NativeTextInput>(null);
     const confPass = useRef<NativeTextInput>(null);
     const { handleError, UpdateUser } = useContext(HandleContext);
+    const { notification } = useContext(AlertContext);
     const { User, orientation } = useAppSelector(state => state.app);
 
     const { isLoading, mutate } = useMutation(['updateUser'], (props: UpdateUserProps) => UpdateUser(props), {
@@ -31,7 +32,7 @@ export const ChangePasswordScreen = () => {
             }
             handleError(String(error))
         },
-        onSuccess: (data) => Toast.show({ text1: 'Correcto', text2: 'Contraseña cambiada', type: 'success', autoHide: true, visibilityTime: 2000 })
+        onSuccess: (data) => notification({ type: 'success', title: 'Correcto', text: 'Contraseña cambiada' }),
     })
 
     const onSubmit: SubmitHandler<ChagePassword> = async ({ confirmPassword, newPassword, password }) => {

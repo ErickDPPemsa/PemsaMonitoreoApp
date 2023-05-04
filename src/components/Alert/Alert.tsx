@@ -1,16 +1,18 @@
-import React, { useContext } from 'react';
-import Animated, { BounceIn, BounceOut, FadeIn, FadeOut, StretchInX, runOnJS } from 'react-native-reanimated';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useContext, useEffect } from 'react';
+import Animated, { BounceIn, BounceOut, FadeIn, FadeOut, LightSpeedInRight, LightSpeedOutRight, SlideOutRight, StretchInX, runOnJS, useAnimatedGestureHandler, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AlertContext } from './AlertContext';
 import { useAppSelector } from '../../app/hooks';
 import { stylesApp } from '../../App';
-import { Icon } from '../IconButton';
+import { Icon, IconButton } from '../IconButton';
 import Text from '../Text';
 import Color from 'color';
+import Portal from '../Portal/Portal';
+import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
 
 export const Alert = () => {
-    const { show, type, contentModal, clear, closeAlert } = useContext(AlertContext);
+    const { show, type, contentModal, clear, closeAlert, closeNot, autoClose, timeOut, updateAutoClose } = useContext(AlertContext);
     const { theme: { colors, dark, roundness } } = useAppSelector(state => state.app);
     const backgroundColor: string = dark ? Color(colors.background).darken(.4).toString() : colors.background;
 
@@ -20,11 +22,42 @@ export const Alert = () => {
             runOnJS(closeAlert)()
         }
     });
+    const x = useSharedValue(0);
+
+    const del = () => {
+        console.log('dele');
+
+    }
+
+    const eventHandler = useAnimatedGestureHandler({
+        onStart: (props) => { },
+        onActive: ({ translationX, translationY }) => {
+            x.value = translationX;
+        },
+    });
+
+    const _style = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateX: x.value }]
+        }
+    });
+
+    useEffect(() => {
+        if (contentModal && type === 'notification' && autoClose) {
+            const close = setTimeout(() => {
+                closeNot();
+            }, timeOut);
+            return () => {
+                clearTimeout(close);
+            }
+        }
+    }, [contentModal, type, autoClose, timeOut]);
+
 
     switch (type) {
         case 'modal':
             return (
-                <Modal visible={show} transparent supportedOrientations={['landscape', 'portrait']}>
+                <Portal>
                     {
                         contentModal &&
                         <Animated.View
@@ -79,13 +112,48 @@ export const Alert = () => {
                             </SafeAreaView>
                         </Animated.View>
                     }
-                </Modal>
+                </Portal>
             );
         case 'notification':
-            return (
-                <Animated.View style={[styles.containerNot]}>
 
-                </Animated.View>
+            return (
+                <Portal>
+                    {
+                        (show && contentModal) &&
+                        <GestureHandlerRootView style={{ flex: 1, }} pointerEvents='box-none'>
+                            <SafeAreaView style={{ flex: 1, alignItems: 'center' }} pointerEvents='box-none'>
+                                <PanGestureHandler
+                                    onGestureEvent={eventHandler}
+                                    onEnded={() => {
+                                        closeNot();
+                                    }}
+                                >
+                                    <Animated.View entering={LightSpeedInRight}
+                                        exiting={SlideOutRight}
+                                        style={[
+                                            styles.containerNot,
+                                            stylesApp.shadow,
+                                            { backgroundColor, borderRadius: roundness * 2, borderLeftWidth: 4, borderColor: (contentModal.type === 'error') ? colors.error : (contentModal.type === 'info') ? colors.info : (contentModal.type === 'question') ? colors.question : (contentModal.type === 'success') ? colors.success : colors.warning },
+                                            _style
+                                        ]}
+                                    >
+                                        <Pressable
+                                            onPressIn={() => {
+                                                updateAutoClose(false);
+                                                x.value = 0;
+                                            }}
+                                        >
+                                            <Text variant='titleMedium'>{contentModal.title}</Text>
+                                            <Text variant='titleSmall'>{contentModal.subtitle}</Text>
+                                            <Text variant='labelSmall'>{contentModal.text}</Text>
+                                            <IconButton name='close' style={{ position: 'absolute', right: 5, top: 5 }} onPress={closeNot} />
+                                        </Pressable>
+                                    </Animated.View>
+                                </PanGestureHandler>
+                            </SafeAreaView>
+                        </GestureHandlerRootView>
+                    }
+                </Portal>
             )
         default: return <></>;
     }
@@ -93,6 +161,8 @@ export const Alert = () => {
 
 const styles = StyleSheet.create({
     containerNot: {
-
-    }
+        width: '95%',
+        top: 10,
+        padding: 10
+    },
 });

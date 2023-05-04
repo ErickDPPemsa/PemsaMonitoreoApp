@@ -55,11 +55,11 @@ export const SplashScreen = ({ navigation }: Props) => {
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <Animated.Image entering={BounceIn}
                 style={[
-                    { width: 150, height: 150 },
+                    { width: '50%', height: 150, resizeMode: 'contain' },
                     dark && { tintColor: colors.onSurface },
                     animatedStyle
                 ]}
-                source={require('../assets/logo4.png')}
+                source={require('../assets/prelmo2.png')}
             />
             {(status === 'checking') && <Text>Checando...</Text>}
         </View>

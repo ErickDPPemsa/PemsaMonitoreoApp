@@ -17,6 +17,11 @@ import { TableScreen } from '../screens/TableScreen';
 import { PdfScreen } from '../screens/PdfScreen';
 import { HandleContext } from '../context/HandleContext';
 import { DomainScreen } from '../screens/DomainScreen';
+import { useQuery } from '@tanstack/react-query';
+import { AxiosError, AxiosResponse } from 'axios';
+import { setUser } from '../features/appSlice';
+import { Loading } from '../components/Loading';
+import { DownloadScreen } from '../screens/DownloadScreen';
 
 export type rootStackScreen = {
     SplashScreen: undefined;
@@ -28,6 +33,7 @@ export type rootStackScreen = {
     TCAP: { user: User } | undefined;
     ChangePasswordScreen: undefined;
     DetailsInfoScreen: undefined;
+    DownloadScreen: undefined;
     ResultAccountScreen: {
         account: Account,
         start: string,
@@ -67,17 +73,17 @@ export const StackScreens = () => {
     const { handleError, CheckAuth } = useContext(HandleContext);
     const dispath = useAppDispatch();
 
-    // const { isFetching } = useQuery(['checkAuth'], () => CheckAuth(), {
-    //     retry: 0,
-    //     refetchInterval: 300000,
-    //     enabled: isAuth,
-    //     onError: async err => {
-    //         const Error: AxiosError = err as AxiosError;
-    //         const Response: AxiosResponse = Error.response as AxiosResponse;
-    //         handleError(String(Response.data.message));
-    //     },
-    //     onSuccess: (resp) => dispath(setUser(resp))
-    // });
+    const { isFetching } = useQuery(['checkAuth'], () => CheckAuth(), {
+        retry: 0,
+        refetchInterval: 300000,
+        enabled: (isAuth === 'logued'),
+        onError: async err => {
+            const Error: AxiosError = err as AxiosError;
+            const Response: AxiosResponse = Error.response as AxiosResponse;
+            handleError(String(Response.data.message));
+        },
+        onSuccess: (resp) => dispath(setUser(resp))
+    });
 
     return (
         <>
@@ -91,6 +97,7 @@ export const StackScreens = () => {
                             <Stack.Screen name='DetailsInfoScreen' component={DetailsInfoScreen} />
                             <Stack.Screen name='ResultAccountScreen' component={ResultAccountScreen} />
                             <Stack.Screen name='ResultAccountsScreen' component={ResultAccountsScreen} />
+                            <Stack.Screen name='DownloadScreen' component={DownloadScreen} />
                             <Stack.Screen name='Search' component={SearchScreen} options={{ animation: 'fade_from_bottom' }} />
                             <Stack.Screen name='TableScreen' component={TableScreen} />
                         </Stack.Group>
@@ -109,7 +116,7 @@ export const StackScreens = () => {
                     <Stack.Screen name="TCAP" options={{ headerShown: false, }} component={TCAPScreen} />
                 </Stack.Group>
             </Stack.Navigator>
-            {/* <Loading refresh={isFetching} /> */}
+            <Loading refresh={isFetching} />
         </>
     )
 }

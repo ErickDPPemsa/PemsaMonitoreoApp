@@ -3,7 +3,6 @@ import { StyleSheet, View, Animated, StyleProp, TextStyle, Image } from 'react-n
 import PagerView from 'react-native-pager-view';
 import { useAppSelector } from '../app/hooks';
 import { ScrollView } from 'react-native-gesture-handler';
-import Toast from 'react-native-toast-message';
 import Text from '../components/Text';
 import { Orientation } from '../interfaces/interfaces';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -123,14 +122,14 @@ export const IntroductionScreen = ({ navigation }: Props) => {
     const { theme: { colors, dark }, orientation } = useAppSelector(state => state.app);
     const Pager = useRef<PagerView>(null);
     const { alert, clear } = useContext(AlertContext);
-    const { domain } = useContext(HandleContext);
+    const { domain, handleError } = useContext(HandleContext);
 
     const omitWellcome = async () => {
         try {
             clear();
             await EncryptedStorage.setItem('isWellcomeOff', 'true');
             (domain === '') ? navigation.replace('DomainScreen') : navigation.replace('LogInScreen');
-        } catch (error) { Toast.show({ type: 'error', text1: 'Error', text2: `${error}` }); }
+        } catch (error) { handleError(String(error)) }
     }
 
     const cancel = async () => {
@@ -138,16 +137,14 @@ export const IntroductionScreen = ({ navigation }: Props) => {
             clear();
             await EncryptedStorage.setItem('isWellcomeOff', 'false');
             (domain === '') ? navigation.replace('DomainScreen') : navigation.replace('LogInScreen');
-        } catch (error) {
-            Toast.show({ type: 'error', text1: 'Error', text2: `${error}` });
-        }
+        } catch (error) { handleError(String(error)) }
     }
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <Reanimated.View entering={FadeInDown.duration(500)} style={[styles.container]}>
                 <Image
-                    source={require('../assets/logo4.png')}
+                    source={require('../assets/prelmo.png')}
                     style={[
                         styles.imageStyle,
                         {

@@ -4,13 +4,13 @@ import { useAppSelector } from '../app/hooks';
 import { Button } from '../components/Button';
 import { SocialNetworks } from '../components/SocialNetworks';
 import Text from '../components/Text';
-import { HandleContext } from '../context/HandleContext';
 import { Orientation } from '../interfaces/interfaces';
-
-//https://arxiv.org/pdf/2111.09296.pdf
+import { AlertContext } from '../components/Alert/AlertContext';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 
 export const HomeScreen = () => {
     const { theme: { fonts, colors, dark }, orientation } = useAppSelector(state => state.app);
+    const { notification } = useContext(AlertContext);
     return (
         <View style={[
             { flex: 1, justifyContent: 'space-around' },
@@ -26,10 +26,10 @@ export const HomeScreen = () => {
             ]}>
                 <Image
                     style={[
-                        { resizeMode: 'contain', height: '50%', width: '100%' },
+                        { resizeMode: 'contain', width: '70%', alignSelf: 'center' },
                         dark && { tintColor: colors.onSurface }
                     ]}
-                    source={require('../assets/logo2.png')}
+                    source={require('../assets/prelmo.png')}
                 />
             </View>
             <View style={[

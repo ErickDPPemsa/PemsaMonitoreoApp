@@ -8,7 +8,8 @@ import { Orientation } from '../interfaces/interfaces';
 import { Platform } from 'react-native';
 import { Button } from './Button';
 import { stylesApp } from '../App';
-import Animated, { FadeInUp, LightSpeedInRight, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { FadeInRight, LightSpeedInRight, SlideInRight, SlideOutRight, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Portal from './Portal/Portal';
 
 interface Props extends PressableProps {
     name: string;
@@ -137,40 +138,17 @@ interface IconPropsMenu {
 
 export const IconMenu = React.forwardRef<Modal, IconPropsMenu>(
     ({ disabled, menu, iconsize }: IconPropsMenu, ref) => {
-        const { theme: { colors, dark, roundness }, insets, orientation, screenWidth, screenHeight } = useAppSelector(state => state.app);
+        const { theme: { colors, dark, roundness }, orientation } = useAppSelector(state => state.app);
 
         const [open, setOpen] = useState<boolean>(false);
-        const [iconMeasure, seticonMeasure] = useState<{
-            x: number;
-            y: number;
-            width: number;
-            height: number;
-        }>({ x: 0, y: 0, width: 0, height: 0 });
         const size: number = 25;
-
-
         const icon = useRef<View>(null);
-
         const radius: number = roundness * 3;
         const backgroundColor: string = dark ? Color(colors.background).darken(.4).toString() : colors.background;
 
-
-        const updateSizes = () => {
-            if (icon.current) {
-                icon.current.measureInWindow((x, y, width, height) => {
-                    seticonMeasure({ x, y, height, width });
-                });
-            }
-        }
-
         useEffect(() => {
             setOpen(false);
-            updateSizes();
         }, [orientation]);
-
-        useEffect(() => {
-            updateSizes();
-        }, [])
 
 
         return (
@@ -183,42 +161,48 @@ export const IconMenu = React.forwardRef<Modal, IconPropsMenu>(
                     color={colors.primary}
                     onPress={() => {
                         setOpen(true);
-                        updateSizes();
                     }}
                 />
                 {
-                    iconMeasure &&
-                    <Modal ref={ref} visible={open} animationType='fade' hardwareAccelerated transparent supportedOrientations={['landscape', 'portrait']} >
-                        <SafeAreaView style={{ flex: 1, backgroundColor: Color(colors.backdrop).fade(.3).toString() }}>
-                            <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)} />
-                            <Animated.View entering={LightSpeedInRight} style={[
-                                {
-                                    position: 'absolute',
-                                    top: iconMeasure.y,
-                                    right: (orientation === Orientation.landscape ? screenHeight : screenWidth) - (iconMeasure.x + iconMeasure.width),
-                                    backgroundColor: backgroundColor, padding: 10,
-                                },
-                                stylesApp.shadow, { shadowColor: colors.primary, borderRadius: radius, shadowRadius: radius, elevation: 5 }
-                            ]}>
-                                {
-                                    menu?.map((op, idx) => {
-                                        return (
-                                            <Animated.View entering={FadeInUp.delay(100 + ((idx + 1) * 20))} key={idx + 1}>
-                                                <Button {...op}
-                                                    onPress={(props) => {
-                                                        op.onPress && op.onPress(props);
-                                                        setOpen(!open);
-                                                    }}
-                                                    variantText='labelMedium'
-                                                />
-                                                {Platform.OS === 'ios' && idx < menu.length - 1 && <View style={{ width: '100%', borderBottomWidth: 1, borderBottomColor: Color(colors.background).fade(.2).toString(), backgroundColor: colors.onSurface }} />}
-                                            </Animated.View>
-                                        )
-                                    })
-                                }
-                            </Animated.View>
-                        </SafeAreaView>
-                    </Modal>
+                    <Portal>
+                        {
+                            open &&
+                            <SafeAreaView style={{ flex: 1, backgroundColor: Color(colors.backdrop).fade(.3).toString() }}>
+                                <Animated.View entering={SlideInRight} exiting={SlideOutRight} style={{ flex: 1 }} pointerEvents='box-none'>
+                                    <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)} />
+                                    <Animated.View entering={LightSpeedInRight} style={[
+                                        {
+                                            position: 'absolute',
+                                            top: 5,
+                                            right: 15,
+                                            backgroundColor: backgroundColor, padding: 10,
+                                        },
+                                        (orientation === Orientation.landscape) && { top: 15, right: 15 },
+                                        stylesApp.shadow, { shadowColor: colors.primary, borderRadius: radius, shadowRadius: radius, elevation: 4 }
+                                    ]}>
+                                        {
+                                            menu?.map((op, idx) => {
+                                                return (
+                                                    <Animated.View
+                                                        entering={FadeInRight.delay(100 + ((idx + 1) * 20))}
+                                                        key={idx + 1}>
+                                                        <Button {...op}
+                                                            onPress={(props) => {
+                                                                op.onPress && op.onPress(props);
+                                                                setOpen(!open);
+                                                            }}
+                                                            variantText='labelMedium'
+                                                        />
+                                                        {Platform.OS === 'ios' && idx < menu.length - 1 && <View style={{ width: '100%', borderBottomWidth: 1, borderBottomColor: Color(colors.background).fade(.2).toString(), backgroundColor: colors.onSurface }} />}
+                                                    </Animated.View>
+                                                )
+                                            })
+                                        }
+                                    </Animated.View>
+                                </Animated.View>
+                            </SafeAreaView>
+                        }
+                    </Portal>
                 }
             </>
         )

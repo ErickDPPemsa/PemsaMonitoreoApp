@@ -25,6 +25,7 @@ export type RootDrawerNavigator = {
     SelectAccountScreen: undefined;
     SelectGroupsScreen: undefined;
     ChangePasswordScreen: undefined;
+    DownloadScreen: undefined;
     DetailsInfoScreen: undefined;
     SelectAccountsScreen: undefined;
 }
@@ -148,7 +149,8 @@ const MenuContent = ({ navigation, state }: DrawerContentComponentProps) => {
                 </View>
 
                 <View style={{ paddingVertical: 5 }}>
-                    <Text style={{ color: colors.primary, fontWeight: '600', marginLeft: 30 }}>Configuración</Text>
+                    <Text style={{ color: colors.primary, fontWeight: '600', marginLeft: 30 }}>Otros</Text>
+                    <RenderItem active={routeNames[index] === 'DownloadScreen' && true} icon="cloud-download-outline" label="Descargas" onPress={() => navigation.navigate<keyof RootDrawerNavigator>('DownloadScreen')} />
                     <RenderItem active={routeNames[index] === 'ChangePasswordScreen' && true} icon="lock-closed-outline" label="CAMBIAR CONTRASEÑA" onPress={() => navigation.navigate<keyof RootDrawerNavigator>('ChangePasswordScreen')} />
                     <RenderItem active={routeNames[index] === 'DetailsInfoScreen' && true} icon="help-outline" label="PEMSA monitoreo APP" onPress={() => navigation.navigate<keyof RootDrawerNavigator>('DetailsInfoScreen')} />
                 </View>
